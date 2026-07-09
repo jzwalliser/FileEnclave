@@ -5,5 +5,4 @@ __pycache__/
 *.pyc
 example.txt
 start_workspace.py
-experiment/
 !.gitignore
