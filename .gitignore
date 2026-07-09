@@ -1,0 +1,6 @@
+archive/
+mnt/
+config.7z
+__pycache__/
+*.pyc
+!.gitignore
