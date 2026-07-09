@@ -3,4 +3,6 @@ mnt/
 config.7z
 __pycache__/
 *.pyc
+example.txt
+start_workspace.py
 !.gitignore
