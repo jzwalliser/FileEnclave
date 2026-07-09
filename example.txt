@@ -1,1 +1,0 @@
-python3 data_editor.py ./archive/2.7z 123 tags '[]'
