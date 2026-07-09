@@ -69,16 +69,30 @@ GUI部分的界面是tkinter写的，用了ttkbootstrap进行美化。
 ### passwordutil.py
 基于argon2id，提供密码派生和随机盐生成。  
 函数：  
-- passwordutil.rand(length=32)：提供16进制随机数字符串，默认长度32位
-- passwordutil.hash(password,salt)：对密码哈希，须提供盐
+- `passwordutil.rand(length=32)`：提供16进制随机数字符串，默认长度32位
+- `passwordutil.hash(password,salt)`：对密码哈希，须提供盐
 
 ### preview.py
 读取待加密文件，并生成预览图。  
 函数：  
-- preview.preview(file_path,quality=100,max_width=960,max_height=540)：给某个文件生成预览图
+- `preview.preview(file_path,quality=100,max_width=960,max_height=540)`：给某个文件生成预览图
 ## sevenzipwrapper.py
 基于7z命令行的压缩包处理工具。
 函数：
+- `read_file(archive,filename,password=None)`：从某个压缩包中读取一个文件
+- `write_file(archive,filename,data,password=None)`：想一个压缩包中写入一个文件
+
+## 配置文件
+### config.json
+记录了配置信息。
+字段：
+- `mounter_path`：默认加密压缩包所在路径
+- `creator_path`：默认加密文件输出路径
+- `rec`：默认恢复量
+- `chunk_size`：切片大小
+- `tags`：默认标签
+- `password`：默认密码
+- `default_chunk_size`：默认切片大小
 
 ## GUI工具
 ### creator_gui.py
@@ -86,12 +100,6 @@ GUI部分的界面是tkinter写的，用了ttkbootstrap进行美化。
 
 ### mounter_gui.py
 提供文件预览，整合修复、解密等功能，方便用户操作。
-
-
-## 配置文件
-### config.json
-记录了配置信息。
-字段：
 
 ## 删
 pass_editor.py删
