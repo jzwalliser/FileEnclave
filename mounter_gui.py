@@ -391,7 +391,7 @@ def on_loaded(future):
 
             btn = tkinter.Button(
                 frame,
-                text=pathlib.Path(filename).stem + parse(tags),
+                text=filename + parse(tags),
                 image=tk_img,
                 command=lambda a=archive,f=filename: on_preview_click(a,f),
                 compound=tkinter.TOP,

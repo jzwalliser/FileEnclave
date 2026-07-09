@@ -1,6 +1,9 @@
 # 简介
 这是文件加密工具，可用于加密各式各样的文件。有不少Vibe-coding的成分；其中有50%的代码是元宝写的，剩下50%代码是我写的，几乎所有测试、修bug工作是我做的。
 
+# 安装及使用
+在目标Linux机上安装python以及相关依赖，然后下载源代码即可运行。
+
 # 界面
 GUI部分的界面是tkinter写的，用了ttkbootstrap进行美化。
 
@@ -98,12 +101,10 @@ GUI部分的界面是tkinter写的，用了ttkbootstrap进行美化。
 ### creator_gui.py
 用于生成压缩包，是creator.py的套壳版本。
 
+
 ### mounter_gui.py
 提供文件预览，整合修复、解密等功能，方便用户操作。
 
-## 删
-pass_editor.py删
-createfile_gui.py删
 
 # 待办
 meta_editor修改文件的时候，需要重新产生恢复数据
