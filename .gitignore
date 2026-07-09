@@ -6,4 +6,5 @@ __pycache__/
 example.txt
 start_workspace.py
 experiment/
+update.sh
 !.gitignore
