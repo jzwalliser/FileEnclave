@@ -25,19 +25,22 @@ import passwordutil
 import sevenzipwrapper
 import shared
 
-class MetadataError(Exception):
+logs = ""
+archive_dir = "./archives"
+columns = 4
+user_password = None
+preview_buttons = []
+current_proc = None
+lock = threading.Lock()
+menu = None
+total = 0
+cache = 0
+executor = None
+
+class MetadataError(Exception): #自定义异常
     pass
 
-def log(log_text):
-    global logs
-    if log_text:
-        logs += f'[{time.strftime("%Y-%m-%d %H:%M:%S",time.localtime())}]' + log_text + "\n"
-
-logs = ""
-
-class Modal():
-    def body(self,master):
-        tkinter.Label(master,text="Modal Dialog").pack()
+class Modal(): #自定义对话框
     def __init__(self,master,title="Topmost Dialog",resizable=(False,False),customize_button=False,esc=True,transistent=True):
         self.top = tkinter.Toplevel(master)
         frame = tkinter.Frame(self.top)
@@ -58,6 +61,8 @@ class Modal():
         if esc:
             self.top.bind("<Escape>",lambda event: self.top.destroy())
         root.wait_window(self.top)
+    def body(self,master):
+        tkinter.Label(master,text="Dialog").pack()
 
 class LogWindow(Modal):
     def __init__(self,master,logs):
@@ -110,7 +115,6 @@ class DeleteWindow(Modal):
     def apply(self):
         self.answer = True
         self.top.destroy()
-    
 
 class LoginWindow(Modal):
     def __init__(self,master,default_path=None,default_password=None,cache=0):
@@ -180,17 +184,25 @@ class LoginWindow(Modal):
         else:
             self.cache_show.configure(fg="black")
 
+def log(log_text): 
+    global logs
+    if log_text:
+        logs += f'[{time.strftime("%Y-%m-%d %H:%M:%S",time.localtime())}]' + log_text + "\n"
 
 def repair_all():
     def newthread():
-        repair = subprocess.Popen(["python3","repair.py","-d",ARCHIVE_DIR],stdout=subprocess.PIPE)
+        repair = subprocess.Popen(["python3","repair.py","-d",archive_dir],stdout=subprocess.PIPE)
         repair.wait()
         output = repair.stdout.read().decode("utf-8").split("\n")
         for i in output:
             log(i)
         repair_everything.configure(state=tkinter.NORMAL,bootstyle=ttkbootstrap.constants.SUCCESS)
-        tkinter.messagebox.showinfo("修复","修复完成，打开Log可查看结果")
+        log_button.configure(bootstyle=ttkbootstrap.constants.SUCCESS)
+        repair_everything.configure(text="修复完成，可打开Logs查看")
         root.after(2000,lambda: repair_everything.configure(bootstyle=ttkbootstrap.constants.PRIMARY))
+        root.after(2000,lambda: repair_everything.configure(text="修复检查所有文件"))
+        root.after(4000,lambda: log_button.configure(bootstyle=ttkbootstrap.constants.PRIMARY))
+
     thread = threading.Thread(target=newthread)
     repair_everything.configure(state=tkinter.DISABLED)
     thread.start()
@@ -212,19 +224,10 @@ def delete_file(archive,filename,button):
         log(f"[+] Deleted: {archive}*")
         preview_buttons.remove(button)
         for idx,i in enumerate(preview_buttons):
-            row = idx // COLUMNS
-            col = idx % COLUMNS
+            row = idx // columns
+            col = idx % columns
             idx += 1
             i.grid(row=row, column=col, padx=5, pady=5)
-    
-
-ARCHIVE_DIR = "./archives"
-COLUMNS = 4
-
-root = ttkbootstrap.Window()
-root.title("Encrypted Archive Viewer")
-root.geometry("2200x1200")
-archives = []
 
 def search_file(event=None):
     idx = 0
@@ -232,49 +235,14 @@ def search_file(event=None):
     for i in preview_buttons:
         i.grid_forget()
         if search_entry.get() in i["text"]:
-            row = idx // COLUMNS
-            col = idx % COLUMNS
+            row = idx // columns
+            col = idx % columns
             idx += 1
             i.grid(row=row, column=col, padx=5, pady=5)
 
 def delete_search():
     search_entry.delete(0,tkinter.END)
     search_file()
-
-top_banner = tkinter.ttk.Frame(root)
-top_banner.pack(fill="x")
-search_frame = tkinter.ttk.LabelFrame(top_banner,text="搜索")
-search_frame.grid(row=0,column=0,padx=20)
-search_entry = tkinter.Entry(search_frame)
-search_entry.grid(row=0,column=0,padx=10,pady=10,ipadx=520)
-search_entry.pack_propagate(False)
-search_button = tkinter.Button(search_frame,text="搜索",command=search_file)
-search_button.grid(row=0,column=1,padx=10)
-search_entry.bind("<Return>",search_file)
-search_delete = tkinter.Button(search_entry,text="x",command=delete_search,cursor="arrow")
-search_delete.pack(side=tkinter.RIGHT)
-repair_everything = ttkbootstrap.Button(top_banner,text="检查修复所有文件",command=repair_all)
-repair_everything.grid(row=0,column=3,padx=20)
-
-canvas = tkinter.Canvas(root)
-scrollbar = tkinter.ttk.Scrollbar(root, orient="vertical", command=canvas.yview)
-frame = tkinter.ttk.Frame(canvas)
-
-canvas.create_window((0, 0), window=frame, anchor="nw")
-canvas.configure(yscrollcommand=scrollbar.set)
-canvas.pack(side="left", fill="both", expand=True)
-scrollbar.pack(side="right", fill="y")
-
-frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
-
-user_password = None
-preview_buttons = []
-current_proc = None
-
-# ✅ 全局锁
-lock = threading.Lock()
-
-# ---------- UI 安全封装 ----------
 
 def safe_ui_update(fn):
     """确保所有 UI 操作回到主线程"""
@@ -295,8 +263,6 @@ def enable_all():
         for btn in preview_buttons:
             btn.config(state="normal")
 
-# ---------- 窗口关闭 ----------
-
 def on_close():
     global current_proc
     with lock:
@@ -312,18 +278,6 @@ def on_destroy():
     root.destroy()
     executor.shutdown(wait=False,cancel_futures=True)
     sys.exit()
-    
-load_frame = tkinter.Frame(top_banner)
-load_frame.grid(row=0,column=1)
-umount = tkinter.ttk.Button(load_frame, text="卸载卷/修复", command=on_close)
-umount.grid(row=0,column=0,pady=10)
-load_indicator = tkinter.ttk.Label(load_frame,text="已加载：0/0")
-load_indicator.grid(row=1,column=0)
-log_button = tkinter.Button(top_banner,text="Logs",command=lambda: LogWindow(root,logs))
-log_button.grid(row=0,column=2)
-root.protocol("WM_DELETE_WINDOW",on_destroy)
-
-# ---------- 后台加载 ----------
 
 def load_preview(archive):
     try:
@@ -345,15 +299,11 @@ def load_preview(archive):
     img = img.resize((480,270))
     return archive, img, original_meta["filename"],original_meta["tags"],original_meta["size"],meta["chunks"],meta["chunk_size"]
 
-# ---------- 加载完成回调（线程安全） ----------
-menu = None
-
 def hide_menu(event):
     global menu
     if menu:
         menu.unpost()
         menu = None
-root.bind("<Button-1>", hide_menu)
 
 def parse(tags):
     ret = ""
@@ -382,8 +332,8 @@ def on_loaded(future):
     def add_button():
         global preview_buttons
         with lock:
-            row = len(preview_buttons) // COLUMNS
-            col = len(preview_buttons) % COLUMNS
+            row = len(preview_buttons) // columns
+            col = len(preview_buttons) % columns
 
             btn = tkinter.Button(frame,text=filename + parse(tags),image=tk_img,command=lambda a=archive,f=filename: on_preview_click(a,f),compound=tkinter.TOP,state=state,wraplength=450)
             def show_menu(event):
@@ -403,9 +353,6 @@ def on_loaded(future):
             load_indicator.configure(text=f"已加载：{len(preview_buttons)}/{total}")
 
     safe_ui_update(add_button)
-    
-
-# ---------- 预览点击 ----------
 
 def on_preview_click(archive,filename):
     global current_proc
@@ -414,19 +361,12 @@ def on_preview_click(archive,filename):
             return
         current_proc = subprocess.Popen(["python3", "mounter.py", archive, user_password, "mnt","-c",str(cache),"-o"])
         log(f"[+] Attempted to mount {archive}")
-        #subprocess.Popen(f"sleep 1 && open '{os.getcwd()}/mnt/{filename}'",shell=True)
         
     disable_all()
 
-# ---------- 批量加载 ----------
-
-total = 0
-cache = 0
-executor = None
-
 def load_archives():
     global user_password
-    global ARCHIVE_DIR
+    global archive_dir
     global archives
     global total
     global cache
@@ -434,40 +374,78 @@ def load_archives():
     try:
         with open("config.json") as conf:
             config = json.loads(conf.read())
-        ARCHIVE_DIR = config.get("mounter_path",ARCHIVE_DIR)
+        archive_dir = config.get("mounter_path",archive_dir)
         user_password = config.get("password",user_password)
         cache = config.get("default_chunk_size",0)
         log("[i] Loaded config.json")
     except:
-        ARCHIVE_DIR = None
+        archive_dir = None
         log("[!] Failed to load config.json")
     root.withdraw()
-    dialog = LoginWindow(root,default_path=ARCHIVE_DIR,default_password=user_password,cache=cache)
+    dialog = LoginWindow(root,default_path=archive_dir,default_password=user_password,cache=cache)
     try:
-        ARCHIVE_DIR,user_password,cache = dialog.path,dialog.passwd,dialog.cache_size
+        archive_dir,user_password,cache = dialog.path,dialog.passwd,dialog.cache_size
     except:
         root.destroy()
         sys.exit()
     root.deiconify()
     try:
-        for i in os.listdir(ARCHIVE_DIR):
+        for i in os.listdir(archive_dir):
             if i.endswith(".7z"):
-                archives += [os.path.join(ARCHIVE_DIR,i)]
+                archives += [os.path.join(archive_dir,i)]
     except:
-        log(f"[!] No such directory: \"{ARCHIVE_DIR}\"")
+        log(f"[!] No such directory: \"{archive_dir}\"")
 
     log(f"[+] Cache set to {shared.format_bytes(cache)} ({cache} Bytes)")
     if cache > 512 * 1024 ** 2:
         log(f"[~] Cache too large, this may trigger OOM when opening large files.")
-    log(f"[+] Working directory: {ARCHIVE_DIR}")
+    log(f"[+] Working directory: {archive_dir}")
     log(f"[+] Found {len(archives)} archive(s)")
     total = len(archives)
     executor = concurrent.futures.ThreadPoolExecutor(max_workers=4)
     for archive in archives:
         future = executor.submit(load_preview, archive)
         future.add_done_callback(on_loaded)
+root = ttkbootstrap.Window()
+root.title("Encrypted Archive Viewer")
+root.geometry("2200x1200")
+archives = []
+top_banner = tkinter.ttk.Frame(root)
+top_banner.pack(fill="x")
+search_frame = tkinter.ttk.LabelFrame(top_banner,text="搜索")
+search_frame.grid(row=0,column=0,padx=20)
+search_entry = tkinter.Entry(search_frame)
+search_entry.grid(row=0,column=0,padx=10,pady=10,ipadx=520)
+search_entry.pack_propagate(False)
+search_button = tkinter.Button(search_frame,text="搜索",command=search_file)
+search_button.grid(row=0,column=1,padx=10)
+search_entry.bind("<Return>",search_file)
+search_delete = tkinter.Button(search_entry,text="x",command=delete_search,cursor="arrow")
+search_delete.pack(side=tkinter.RIGHT)
+repair_everything = ttkbootstrap.Button(top_banner,text="检查修复所有文件",command=repair_all)
+repair_everything.grid(row=0,column=3,padx=20)
 
-# ---------- 启动 ----------
+canvas = tkinter.Canvas(root)
+scrollbar = tkinter.ttk.Scrollbar(root, orient="vertical", command=canvas.yview)
+frame = tkinter.ttk.Frame(canvas)
 
+canvas.create_window((0, 0), window=frame, anchor="nw")
+canvas.configure(yscrollcommand=scrollbar.set)
+canvas.pack(side="left", fill="both", expand=True)
+scrollbar.pack(side="right", fill="y")
+
+frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+
+load_frame = tkinter.Frame(top_banner)
+load_frame.grid(row=0,column=1)
+umount = tkinter.ttk.Button(load_frame, text="卸载卷/修复", command=on_close)
+umount.grid(row=0,column=0,pady=10)
+load_indicator = tkinter.ttk.Label(load_frame,text="已加载：0/0")
+load_indicator.grid(row=1,column=0)
+log_button = ttkbootstrap.Button(top_banner,text="Logs",command=lambda: LogWindow(root,logs))
+log_button.grid(row=0,column=2)
+root.protocol("WM_DELETE_WINDOW",on_destroy)
+
+root.bind("<Button-1>", hide_menu)
 root.after(100, load_archives)
 root.mainloop()
