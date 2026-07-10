@@ -48,7 +48,7 @@ class Modal(): #自定义对话框
         if geometry:
             self.top.geometry(geometry)
         frame = tkinter.Frame(self.top)
-        frame.pack(fill=tkinter.BOTH)
+        frame.pack(fill=tkinter.BOTH,expand=True)
         focus = self.body(frame)
         if focus:
             focus.focus_set()
@@ -61,7 +61,7 @@ class Modal(): #自定义对话框
         self.top.protocol("WM_DELETE_WINDOW",self.top.destroy)
         if not customize_button:
             ok_btn = tkinter.Button(self.top,text="确定",command=self.top.destroy)
-            ok_btn.pack(pady=(0,20))
+            ok_btn.pack(pady=20)
         if esc:
             self.top.bind("<Escape>",lambda event: self.top.destroy())
         root.wait_window(self.top)
@@ -71,7 +71,7 @@ class Modal(): #自定义对话框
 class LogWindow(Modal):
     def __init__(self,master,logs):
         self.logs = logs
-        super().__init__(master,title="Logs")
+        super().__init__(master,title="Logs",resizable=(True,True))
     def body(self,master):
         font = ["Noto Sans Mono",8]
         textpad = tkinter.scrolledtext.ScrolledText(master,width=160,font=font)
@@ -87,17 +87,17 @@ class LogWindow(Modal):
                 textpad.insert(tkinter.INSERT,i + "\n","Info")
         textpad.see(tkinter.END)
         textpad.configure(state=tkinter.DISABLED)
-        textpad.pack()
+        textpad.pack(fill=tkinter.BOTH,expand=True)
 
 class InfoWindow(Modal):
     def __init__(self,master,info):
         self.info = info
-        super().__init__(master,title="文件信息")
+        super().__init__(master,title="文件信息",resizable=(True,True))
     def body(self,master):
         textpad = tkinter.scrolledtext.ScrolledText(master,width=80,height=10,font=("Noto Sans Mono",13))
         textpad.insert(tkinter.INSERT,self.info)
         textpad.configure(state=tkinter.DISABLED)
-        textpad.pack()
+        textpad.pack(fill=tkinter.BOTH,expand=True)
 
 class DeleteWindow(Modal):
     def __init__(self,master,info):
@@ -139,20 +139,24 @@ class LoginWindow(Modal):
         self.dir = tkinter.Entry(path_frame)
         self.dir.pack(side=tkinter.LEFT,fill=tkinter.X,expand=True)
         self.dir.bind("<Return>",self.apply)
-        dir_button = tkinter.Button(path_frame,text="Path",command=self.choose_file)
-        dir_button.pack(side=tkinter.LEFT,padx=10)
         if self.default_path:
             self.dir.insert(0,self.default_path)
+        dir_button = tkinter.Button(path_frame,text="选择",command=self.choose_file)
+        dir_button.pack(side=tkinter.LEFT,padx=10)
 
         password_frame = tkinter.Frame(master)
         password_frame.pack(fill=tkinter.X)
         password_label = tkinter.Label(password_frame,text="密码：")
         password_label.pack(side=tkinter.LEFT)
-        self.password = tkinter.Entry(password_frame)
-        self.password.pack(side=tkinter.LEFT,fill=tkinter.X,expand=True,padx=(0,10))
+        self.password = tkinter.Entry(password_frame,show="●")
+        self.password.pack(side=tkinter.LEFT,fill=tkinter.X,expand=True)
         self.password.bind("<Return>",self.apply)
         if self.default_password:
             self.password.insert(0,self.default_password)
+        password_show = tkinter.Button(password_frame,text="显示")
+        password_show.pack(side=tkinter.LEFT,padx=10)
+        password_show.bind("<ButtonPress-1>",lambda event: self.password.configure(show=""))
+        password_show.bind("<ButtonRelease-1>",lambda event: self.password.configure(show="●"))
 
         cache_frame = tkinter.Frame(master)
         cache_frame.pack(fill=tkinter.X)
@@ -280,7 +284,7 @@ def on_close():
             current_proc = None
     enable_all()
     os.system("umount -l mnt")
-    log(f"[i] Attempted to umount mnt")
+    log(f"[+] Attempted to umount mnt")
 
 def on_destroy():
     on_close()
@@ -329,7 +333,7 @@ def on_loaded(future):
         if isinstance(e,RuntimeError):
             log(f"[!] {e}")
         elif isinstance(e,MetadataError):
-            log(f"[!] {e} isn't designed to be loaded.")
+            log(f"[!] {e} is invalid")
         else:
             traceback.print_exc()
             log(f"[!] Unknown error: {e}")
@@ -390,7 +394,7 @@ def load_archives():
         archive_dir = config.get("mounter_path",archive_dir)
         user_password = config.get("password",user_password)
         cache = config.get("default_chunk_size",0)
-        log("[i] Loaded config.json")
+        log("[+] Loaded config.json")
     except:
         archive_dir = None
         log("[!] Failed to load config.json")
