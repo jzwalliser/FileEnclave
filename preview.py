@@ -42,7 +42,6 @@ def preview(file_path,quality=100,max_width=960,max_height=540):
     else:
         return add_background(PIL.Image.open("./icons/file.png").convert("RGB"))
 
-
 def preview_media(video_path,max_width=960,max_height=540):
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
@@ -54,13 +53,8 @@ def preview_media(video_path,max_width=960,max_height=540):
     if not ret:
         raise ValueError("Failed to read the first ")
 
-    # BGR -> RGB
     frame_rgb = cv2.cvtColor(frame,cv2.COLOR_BGR2RGB)
-
-    # numpy -> PIL Image
     pil_img = PIL.Image.fromarray(frame_rgb)
-
-    # ---------- 新增：等比例缩放 ----------
     orig_width,orig_height = pil_img.size
     scale = min(max_width / orig_width,max_height / orig_height,1.0)
 
@@ -88,47 +82,24 @@ def preview_text(text_path,max_width=960,max_height=540):
     surface = cairo.ImageSurface(cairo.FORMAT_ARGB32,max_width,max_height)
     ctx = cairo.Context(surface)
 
-    markup = pygments.highlight(
-        content,
-        pygments.lexers.get_lexer_for_filename(text_path),
-        pygments.formatters.PangoMarkupFormatter(style="monokai")
-    )
-
-    # 2. Pango layout
+    markup = pygments.highlight(content,pygments.lexers.get_lexer_for_filename(text_path),pygments.formatters.PangoMarkupFormatter(style="monokai"))
     layout = gi.repository.PangoCairo.create_layout(ctx)
     font_desc = gi.repository.Pango.FontDescription("Consolas 18")
     layout.set_font_description(font_desc)
     layout.set_markup(markup,-1)
     layout.set_width(max_width * gi.repository.Pango.SCALE)
     layout.set_wrap(gi.repository.Pango.WrapMode.WORD_CHAR)
-
-    # 3. 绘制文字
     ctx.set_source_rgba(0,0,0,1)
     gi.repository.PangoCairo.show_layout(ctx,layout)
-
-    # 4. 转成 Pillow Image
     data = surface.get_data()
-    pil_img = PIL.Image.frombuffer(
-        "RGBA",(max_width,max_height),data,"raw","BGRA",0,1
-    )
+    pil_img = PIL.Image.frombuffer("RGBA",(max_width,max_height),data,"raw","BGRA",0,1)
     pil_img = pil_img.convert("RGB")
     return pil_img
 
 def add_background(img,width=960,height=540,quality=100,background=(0,0,0)):
-    pil_img = PIL.ImageOps.pad(
-        img,
-        (width,height),
-        method=PIL.Image.Resampling.LANCZOS, # 不缩放，仅用于插值策略
-        color=background,
-        centering=(0.5,0.5)  # 居中
-    )
-    # --------------------------------------
-    
-
-    # 保存到内存
-    buffer = io.BytesIO()
+    pil_img = PIL.ImageOps.pad(img,(width,height),method=PIL.Image.Resampling.LANCZOS,color=background,centering=(0.5,0.5)) #把图片贴在黑色背景正中央
+    buffer = io.BytesIO() #保存到内存
     pil_img.save(buffer,format="JPEG",quality=quality,optimize=True)
-
     return buffer.getvalue()
 
 def preview_to_file(path,file="temp.jpg"):

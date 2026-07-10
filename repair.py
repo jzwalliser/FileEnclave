@@ -14,7 +14,6 @@ def repair(file):
     message = {0:"[+] Repair Ok",2:"[!] Repair failed",3:"[~] No recovery files found"}
     proc = subprocess.Popen(f"par2 repair {file}",shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE) #执行命令
     proc.wait() #等待执行完毕
-    #print(proc.stdout.read(),proc.returncode)
     return message[proc.returncode] + ": " + file
 
 if args.directory:
