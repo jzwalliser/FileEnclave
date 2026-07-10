@@ -45,25 +45,26 @@ class MetadataError(Exception): #自定义异常
 class Modal(): #自定义对话框
     def __init__(self,master,title="Topmost Dialog",resizable=(False,False),customize_button=False,esc=True,transient=True,geometry=None):
         self.top = tkinter.Toplevel(master)
-        if geometry:
-            self.top.geometry(geometry)
-        frame = tkinter.Frame(self.top)
-        frame.pack(fill=tkinter.BOTH,expand=True)
-        focus = self.body(frame)
-        if focus:
-            focus.focus_set()
         self.top.title(title)
         self.top.resizable(*resizable)
         self.top.attributes("-topmost",True)
         self.top.grab_set()
         if transient:
             self.top.transient(master)
-        self.top.protocol("WM_DELETE_WINDOW",self.top.destroy)
+        if esc:
+            self.top.bind("<Escape>",lambda event: self.top.destroy())
+        if geometry:
+            self.top.geometry(geometry)
+            
+        frame = tkinter.Frame(self.top)
+        frame.pack(fill=tkinter.BOTH,expand=True)
+        focus = self.body(frame)
+        if focus:
+            focus.focus_set()
         if not customize_button:
             ok_btn = tkinter.Button(self.top,text="确定",command=self.top.destroy)
             ok_btn.pack(pady=20)
-        if esc:
-            self.top.bind("<Escape>",lambda event: self.top.destroy())
+        
         root.wait_window(self.top)
     def body(self,master):
         pass
@@ -100,12 +101,14 @@ class InfoWindow(Modal):
         textpad.pack(fill=tkinter.BOTH,expand=True)
 
 class DeleteWindow(Modal):
-    def __init__(self,master,info):
-        self.info = info
+    def __init__(self,master,archive,filename):
+        self.archive = archive
+        self.filename = filename
         super().__init__(master,title="删除",customize_button=True)
     def body(self,master):
+        message = f"你即将删除：{self.archive} ({self.filename})\n此操作无法撤销，内部文件也无法恢复。是否继续？"
         textpad = tkinter.scrolledtext.ScrolledText(master,width=80,height=10,font=("Noto Sans Mono",13))
-        textpad.insert(tkinter.INSERT,self.info)
+        textpad.insert(tkinter.INSERT,message)
         textpad.configure(state=tkinter.DISABLED)
         textpad.pack()
         buttons = tkinter.Frame(self.top)
@@ -126,7 +129,7 @@ class LoginWindow(Modal):
         self.default_password = default_password
         self.warning = False
         self.default_cache = cache
-        super().__init__(master,title="登录",customize_button=True,transient=False,geometry="1200x250")
+        super().__init__(master,title="登录",customize_button=True,transient=False,geometry="1200x300")
     def choose_file(self):
         folder = tkinter.filedialog.askdirectory()
         self.dir.delete(0,tkinter.END)
@@ -173,6 +176,11 @@ class LoginWindow(Modal):
             self.cache.current(0)
         self.update_size()
 
+        self.info_show_password_var = tkinter.IntVar()
+        info_show_passwords = ttkbootstrap.Checkbutton(master,text="展示盐和密码（仅调试用）",variable=self.info_show_password_var)
+        info_show_passwords.pack(anchor=tkinter.W,padx=10)
+        self.info_show_password_var.set(value=1)
+
         buttons_frame = tkinter.Frame(master)
         buttons_frame.pack()
         ok_button = tkinter.Button(buttons_frame,text="确定",command=self.apply)
@@ -202,10 +210,10 @@ class LoginWindow(Modal):
         else:
             self.cache_show.configure(fg="black")
 
-def log(log_text): 
+def log(message): 
     global logs
-    if log_text:
-        logs += f'[{time.strftime("%Y-%m-%d %H:%M:%S",time.localtime())}]' + log_text + "\n"
+    if message:
+        logs += f'[{time.strftime("%Y-%m-%d %H:%M:%S",time.localtime())}]' + message + "\n"
 
 def repair_all():
     def newthread():
@@ -229,15 +237,24 @@ def repair_file(file):
     def newthread(file):
         repair = subprocess.Popen(["python3","repair.py","-f",file],stdout=subprocess.PIPE)
         repair.wait()
-        output = repair.stdout.read().decode("utf-8").rstrip()
-        log(output)
+        log(repair.stdout.read().decode("utf-8").rstrip())
         tkinter.messagebox.showinfo("修复",output)
+        
     thread = threading.Thread(target=newthread,args=[file])
     thread.start()
 
 def delete_file(archive,filename,button):
-    delete = DeleteWindow(root,f"你即将删除：{archive} ({filename})\n此操作无法恢复。是否继续？")
+    global total
+    delete = DeleteWindow(root,archive,filename)
     if delete.answer:
+        archives.remove(archive)
+        total -= 1
+        for i in range(json.loads(sevenzipwrapper.read_file(archive,"metadata").decode("utf-8"))["chunks"]):
+            sevenzipwrapper.write_file(archive,str(i),b"0" * 1024,password=None)
+        sevenzipwrapper.write_file(archive,"metadata",b"0" * 1024,password=None)
+        sevenzipwrapper.write_file(archive,"password",b"0" * 1024,password=None)
+        sevenzipwrapper.write_file(archive,"original_metadata",b"0" * 1024,password=None)
+        sevenzipwrapper.write_file(archive,"preview",b"0" * 1024,password=None)
         os.system(f"rm {archive}*")
         log(f"[+] Deleted: {archive}*")
         preview_buttons.remove(button)
@@ -258,36 +275,29 @@ def search_file(event=None):
             idx += 1
             i.grid(row=row,column=col,padx=5,pady=5)
 
-def delete_search():
+def reset_search():
     search_entry.delete(0,tkinter.END)
     search_file()
 
-def disable_all():
+def set_state(status):
     global state
-    state = tkinter.DISABLED
+    state = status
     with lock:
         for btn in preview_buttons:
             btn.config(state=state)
 
-def enable_all():
-    global state
-    state = tkinter.NORMAL
-    with lock:
-        for btn in preview_buttons:
-            btn.config(state=state)
-
-def on_close():
+def on_umount():
     global current_proc
     with lock:
         if current_proc is not None:
             current_proc.send_signal(signal.SIGINT)
             current_proc = None
-    enable_all()
+    set_state(tkinter.NORMAL)
     os.system("umount -l mnt")
     log(f"[+] Attempted to umount mnt")
 
-def on_destroy():
-    on_close()
+def on_close():
+    on_umount()
     root.destroy()
     executor.shutdown(wait=False,cancel_futures=True)
     sys.exit()
@@ -303,14 +313,16 @@ def load_preview(archive):
     file_pwd = sevenzipwrapper.read_file(archive,"password",password=user_pwd).decode("utf-8")
     #print("{" + archive + " " + file_pwd + "|" + user_pwd + "}")
 
-    original_meta = json.loads(
-        sevenzipwrapper.read_file(archive,"original_metadata",user_pwd).decode("utf-8"))
-
-    preview_bytes = sevenzipwrapper.read_file(archive,"preview",password=file_pwd)
-
-    img = PIL.Image.open(io.BytesIO(preview_bytes))
+    original_meta = json.loads(sevenzipwrapper.read_file(archive,"original_metadata",user_pwd).decode("utf-8"))
+    filename = original_meta["filename"]
+    tags = original_meta["tags"]
+    size = original_meta["size"]
+    chunk_num = meta["chunks"]
+    chunk_size = meta["chunk_size"]
+    
+    img = PIL.Image.open(io.BytesIO(sevenzipwrapper.read_file(archive,"preview",password=file_pwd)))
     img = img.resize((480,270))
-    return archive,img,original_meta["filename"],original_meta["tags"],original_meta["size"],meta["chunks"],meta["chunk_size"]
+    return archive,img,filename,tags,size,chunk_num,chunk_size
 
 def hide_menu(event):
     global menu
@@ -327,7 +339,7 @@ def parse(tags):
 def on_loaded(future):
     global total
     try:
-        archive,img,filename,tags,size,chunks,chunk_size = future.result()
+        archive,img,filename,tags,size,chunk_num,chunk_size = future.result()
         log(f"[+] Loaded archive: {archive}")
     except Exception as e:
         if isinstance(e,RuntimeError):
@@ -347,8 +359,8 @@ def on_loaded(future):
         with lock:
             row = len(preview_buttons) // columns
             col = len(preview_buttons) % columns
+            btn = tkinter.Button(frame,text=filename + parse(tags),image=tk_img,command=lambda a=archive,f=filename: open_file(a,f),compound=tkinter.TOP,state=state,wraplength=450)
 
-            btn = tkinter.Button(frame,text=filename + parse(tags),image=tk_img,command=lambda a=archive,f=filename: on_preview_click(a,f),compound=tkinter.TOP,state=state,wraplength=450)
             def show_menu(event):
                 global menu
                 if menu:
@@ -356,7 +368,7 @@ def on_loaded(future):
                 menu = tkinter.Menu(btn,tearoff=0)
                 menu.add_command(label="修复",command=lambda: repair_file(archive))
                 menu.add_command(label="删除",command=lambda: delete_file(archive,filename,btn))
-                menu.add_command(label="文件信息",command=lambda: InfoWindow(root,f'路径：{pathlib.Path(archive).parent}\n加密：{pathlib.Path(archive).name}\n文件：{filename}\n标签：{" ".join(tags)}\n大小：{shared.format_bytes(size)} ({size} Bytes)\n切片数量：{chunks}\n切片规格：{shared.format_bytes(chunk_size)} ({chunk_size} Bytes)'))
+                menu.add_command(label="文件信息",command=lambda: InfoWindow(root,f'路径：{pathlib.Path(archive).parent}\n加密：{pathlib.Path(archive).name}\n文件：{filename}\n标签：{parse(tags)}\n大小：{shared.format_bytes(size)} ({size} Bytes)\n切片数量：{chunk_num}\n切片规格：{shared.format_bytes(chunk_size)} ({chunk_size} Bytes)'))
                 menu.post(event.x_root,event.y_root)
                 
             btn.image = tk_img
@@ -371,7 +383,7 @@ def on_loaded(future):
             
     root.after(0,add_button)
 
-def on_preview_click(archive,filename):
+def open_file(archive,filename):
     global current_proc
     with lock:
         if current_proc is not None:
@@ -379,7 +391,7 @@ def on_preview_click(archive,filename):
         current_proc = subprocess.Popen(["python3","mounter.py",archive,user_password,"mnt","-c",str(cache),"-o"])
         log(f"[+] Attempted to mount {archive}")
         
-    disable_all()
+    set_state(tkinter.DISABLED)
 
 def load_archives():
     global user_password
@@ -398,12 +410,14 @@ def load_archives():
     except:
         archive_dir = None
         log("[!] Failed to load config.json")
+    
     dialog = LoginWindow(root,default_path=archive_dir,default_password=user_password,cache=cache)
     try:
         archive_dir,user_password,cache = dialog.path,dialog.passwd,dialog.cache_size
     except:
         root.destroy()
         sys.exit()
+    
     root.deiconify()
     try:
         for i in os.listdir(archive_dir):
@@ -441,14 +455,14 @@ search_entry.bind("<Return>",search_file)
 
 search_button = tkinter.Button(search_frame,text="搜索",command=search_file)
 search_button.grid(row=0,column=1,padx=10)
-search_delete = tkinter.Button(search_entry,text=tkinter.X,command=delete_search,cursor="arrow")
-search_delete.pack(side=tkinter.RIGHT)
+search_reset = tkinter.Button(search_entry,text=tkinter.X,command=reset_search,cursor="arrow")
+search_reset.pack(side=tkinter.RIGHT)
 
 log_button = ttkbootstrap.Button(top_banner,text="Logs",command=lambda: LogWindow(root,logs))
 log_button.grid(row=0,column=1,padx=10)
 
-umount = tkinter.ttk.Button(top_banner,text="卸载卷",command=on_close)
-umount.grid(row=0,column=2,padx=10)
+umount_button = tkinter.ttk.Button(top_banner,text="卸载卷",command=on_umount)
+umount_button.grid(row=0,column=2,padx=10)
 
 repair_everything = ttkbootstrap.Button(top_banner,text="检查修复所有文件",command=repair_all)
 repair_everything.grid(row=0,column=3,padx=10)
@@ -466,7 +480,7 @@ scrollbar.pack(side="right",fill="y")
 
 load_indicator = ttkbootstrap.Floodgauge(root,text="已加载：0/0")
 load_indicator.pack(fill=tkinter.X)
-root.protocol("WM_DELETE_WINDOW",on_destroy)
+root.protocol("WM_DELETE_WINDOW",on_close)
 
 root.bind("<Button-1>",hide_menu)
 root.after(100,load_archives)
