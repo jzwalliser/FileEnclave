@@ -17,12 +17,9 @@ import io
 import threading
 import shared
 
-#TODO：把chunk_size选择器美化掉
-
 class Tk(ttkbootstrap.Window,tkinterdnd2.TkinterDnD.Tk): #混合ttkbootstrap和tkinterdnd
     pass
 
-#=====加载与配置=====
 rec_percentage = 0 #恢复量（百分比）
 chunk_size = 2079152 #单个切片大小
 tags = [] #标签
@@ -31,6 +28,7 @@ password = "" #密码
 file_path = None #被加载的文件
 edit_mode = False #标签修改模式
 column = 5 #每行标签数
+tag_buttons = []
 
 try:
     with open("config.json","rb") as conf:
@@ -43,8 +41,6 @@ else:
     tags = config.get("tags",tags)
     path = config.get("creator_path",path)
     password = config.get("password",password)
-
-#=====各种函数定义=====
 
 def on_drop(event): #拖拽
     global file_path
@@ -130,12 +126,16 @@ def edit():
 def user_add(event):
     tag_name = tag_append.get()
     for i in tag_name.split():
+        continue_flag = False
         for j in tag_buttons:
             if j["text"] == i:
                 j.configure(bootstyle=(ttkbootstrap.constants.INFO,ttkbootstrap.constants.OUTLINE))
                 root.after(1000,lambda btn=j: j.configure(bootstyle=ttkbootstrap.constants.PRIMARY))
                 root.after(1500,tag_highlighter)
-                return
+                continue_flag = True
+                break
+        if continue_flag:
+            continue
         add_tag(i)
         tag_append.grid(row=len(tag_buttons) // column,column=len(tag_buttons) % column,padx=5,pady=5,sticky=tkinter.W)
         tag_append.delete(0,tkinter.END)
@@ -167,12 +167,13 @@ def insert_tag(tag):
         tags_var.set(current + tag)
 
 def add_tag(tag):
+    global tag_buttons
     if tag == "":
         return
     tag_button = ttkbootstrap.Button(frame_buttons,text=tag,width=8,command=lambda t=tag: insert_tag(t))
     tag_button.grid(row=len(tag_buttons) // column,column=len(tag_buttons) % column,padx=5,pady=5,sticky=tkinter.W)
     tag_button.bind("<Button-3>",lambda event,t=tag: del_tag(event,t))
-    tag_buttons.append(tag_button)
+    tag_buttons += [tag_button]
 
 def tag_highlighter(arg1=None,arg2=None,arg3=None):
     current = tags_var.get().strip().split()
@@ -199,9 +200,7 @@ def calc_size(index,size):
 
 def update_size(event):
     chunk_size_indicator.configure(text=str(calc_size(chunk_size_entry.current(),chunk_size_entry.get())) + " Bytes")
-            
-    
-#=====窗口与界面=====
+
 root = Tk()
 root.title("Creator GUI Tool")
 root.geometry("1580x1000")
@@ -219,7 +218,7 @@ main_pane.add(right_frame,minsize=860)
 drop_frame = tkinter.LabelFrame(left_frame,text="拖拽文件到此处或选择文件",width=400,height=150,cursor="hand2")
 drop_frame.pack(ipady=30,fill=tkinter.X)
 drop_frame.pack_propagate(False)
-drop_label = tkinter.Label(drop_frame,text="📂 拖拽一个文件进来\n或点击选择文件",fg="gray",wraplength=500)
+drop_label = tkinter.Label(drop_frame,text="拖拽一个文件进来\n或点击选择文件",fg="gray",wraplength=500)
 drop_label.pack(expand=True)
 drop_label.bind("<Button-1>",choose_file)
 
@@ -269,7 +268,7 @@ output_entry = tkinter.Entry(frame_output,width=15)
 output_entry.insert(tkinter.INSERT,path)
 output_entry.pack(side=tkinter.LEFT,fill=tkinter.X,expand=True)
 
-run = ttkbootstrap.Button(left_frame,text="🚀 执行 creator.py",command=run_creator)
+run = ttkbootstrap.Button(left_frame,text="开始加密",command=run_creator)
 run.pack(fill=tkinter.X,pady=15,ipady=20)
 
 right_container = tkinter.LabelFrame(right_frame,text="标签设置")
@@ -290,12 +289,11 @@ tag_entry.pack(fill=tkinter.X,pady=(5,10))
 
 frame_buttons = tkinter.Frame(right_container)
 frame_buttons.pack(fill=tkinter.BOTH,expand=True,padx=10)
-tag_buttons = []
 
 tag_append = tkinter.Entry(frame_buttons,width=9)
 tag_append.bind("<Return>",user_add)
 
-#=====启动=====
 for i in tags:
     add_tag(i)
+
 root.mainloop()

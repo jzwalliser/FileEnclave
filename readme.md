@@ -87,8 +87,8 @@ GUI部分的界面是tkinter写的，用了ttkbootstrap进行美化。
 
 ## 配置文件
 ### config.json
-记录了配置信息。
-字段：
+记录了配置信息。  
+字段：  
 - `mounter_path`：默认加密压缩包所在路径
 - `creator_path`：默认加密文件输出路径
 - `rec`：默认恢复量
@@ -109,3 +109,7 @@ GUI部分的界面是tkinter写的，用了ttkbootstrap进行美化。
 # 待办
 preview可以解析其它文件
 搞一批图标，当文件无法解析的时候用图标
+
+# 一些其他解释
+CLI工具内的一些内容用的是英文写的，GUI界面用的是中文。  
+还有，我个人在写代码的时候喜欢用list += [item]，因为list.append()太长了，我懒~

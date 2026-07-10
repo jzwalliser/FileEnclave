@@ -48,28 +48,25 @@ def preview_media(video_path,max_width=960,max_height=540):
     if not cap.isOpened():
         raise IOError("Failed to open video.")
 
-    ret, frame = cap.read()
+    ret,frame = cap.read()
     cap.release()
 
     if not ret:
         raise ValueError("Failed to read the first ")
 
     # BGR -> RGB
-    frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    frame_rgb = cv2.cvtColor(frame,cv2.COLOR_BGR2RGB)
 
     # numpy -> PIL Image
     pil_img = PIL.Image.fromarray(frame_rgb)
 
     # ---------- 新增：等比例缩放 ----------
-    orig_width, orig_height = pil_img.size
-    scale = min(max_width / orig_width, max_height / orig_height, 1.0)
+    orig_width,orig_height = pil_img.size
+    scale = min(max_width / orig_width,max_height / orig_height,1.0)
 
     if scale < 1.0:
-        new_size = (
-            int(orig_width * scale),
-            int(orig_height * scale)
-        )
-        pil_img = pil_img.resize(new_size, PIL.Image.LANCZOS)
+        new_size = (int(orig_width * scale),int(orig_height * scale))
+        pil_img = pil_img.resize(new_size,PIL.Image.LANCZOS)
     return pil_img
 
 def preview_pdf(pdf_path,max_width=960,max_height=540,dpi=200):
@@ -78,7 +75,7 @@ def preview_pdf(pdf_path,max_width=960,max_height=540,dpi=200):
         raise RuntimeError("Pdf empty or corrupt.")
     img = images[0]
     buf = io.BytesIO()
-    img.save(buf, format="JPEG", quality=95)
+    img.save(buf,format="JPEG",quality=95)
     pil_img = PIL.Image.open(io.BytesIO(buf.getvalue()))
     pil_img.load()
     return pil_img
@@ -88,7 +85,7 @@ def preview_text(text_path,max_width=960,max_height=540):
     content_b = handler.read()
     content = content_b.decode(chardet.detect(content_b)["encoding"],errors='ignore')
 
-    surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, max_width, max_height)
+    surface = cairo.ImageSurface(cairo.FORMAT_ARGB32,max_width,max_height)
     ctx = cairo.Context(surface)
 
     markup = pygments.highlight(
@@ -101,18 +98,18 @@ def preview_text(text_path,max_width=960,max_height=540):
     layout = gi.repository.PangoCairo.create_layout(ctx)
     font_desc = gi.repository.Pango.FontDescription("Consolas 18")
     layout.set_font_description(font_desc)
-    layout.set_markup(markup, -1)
+    layout.set_markup(markup,-1)
     layout.set_width(max_width * gi.repository.Pango.SCALE)
     layout.set_wrap(gi.repository.Pango.WrapMode.WORD_CHAR)
 
     # 3. 绘制文字
-    ctx.set_source_rgba(0, 0, 0, 1)
-    gi.repository.PangoCairo.show_layout(ctx, layout)
+    ctx.set_source_rgba(0,0,0,1)
+    gi.repository.PangoCairo.show_layout(ctx,layout)
 
     # 4. 转成 Pillow Image
     data = surface.get_data()
     pil_img = PIL.Image.frombuffer(
-        "RGBA", (max_width, max_height), data, "raw", "BGRA", 0, 1
+        "RGBA",(max_width,max_height),data,"raw","BGRA",0,1
     )
     pil_img = pil_img.convert("RGB")
     return pil_img
@@ -121,16 +118,16 @@ def add_background(img,width=960,height=540,quality=100,background=(0,0,0)):
     pil_img = PIL.ImageOps.pad(
         img,
         (width,height),
-        method=PIL.Image.Resampling.LANCZOS,  # 不缩放，仅用于插值策略
+        method=PIL.Image.Resampling.LANCZOS, # 不缩放，仅用于插值策略
         color=background,
-        centering=(0.5, 0.5)  # 居中
+        centering=(0.5,0.5)  # 居中
     )
     # --------------------------------------
     
 
     # 保存到内存
     buffer = io.BytesIO()
-    pil_img.save(buffer, format="JPEG", quality=quality, optimize=True)
+    pil_img.save(buffer,format="JPEG",quality=quality,optimize=True)
 
     return buffer.getvalue()
 

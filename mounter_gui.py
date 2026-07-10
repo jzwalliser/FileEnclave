@@ -327,28 +327,19 @@ root.protocol("WM_DELETE_WINDOW",on_destroy)
 
 def load_preview(archive):
     try:
-        meta = json.loads(
-            sevenzipwrapper.read_file(archive, "metadata").decode("utf-8")
-        )
+        meta = json.loads(sevenzipwrapper.read_file(archive, "metadata").decode("utf-8"))
     except:
         raise MetadataError(archive)
     salt = meta["salt"]
 
     user_pwd = passwordutil.hash(user_password, salt)
-    file_pwd = sevenzipwrapper.read_file(
-        archive, "password", password=user_pwd
-    ).decode("utf-8")
+    file_pwd = sevenzipwrapper.read_file(archive, "password", password=user_pwd).decode("utf-8")
     #print("{" + archive + " " + file_pwd + "|" + user_pwd + "}")
 
     original_meta = json.loads(
-        sevenzipwrapper.read_file(
-            archive, "original_metadata", user_pwd
-        ).decode("utf-8")
-    )
+        sevenzipwrapper.read_file(archive, "original_metadata", user_pwd).decode("utf-8"))
 
-    preview_bytes = sevenzipwrapper.read_file(
-        archive, "preview", password=file_pwd
-    )
+    preview_bytes = sevenzipwrapper.read_file(archive, "preview", password=file_pwd)
 
     img = PIL.Image.open(io.BytesIO(preview_bytes))
     img = img.resize((480,270))
@@ -389,19 +380,12 @@ def on_loaded(future):
     tk_img = PIL.ImageTk.PhotoImage(img)
 
     def add_button():
+        global preview_buttons
         with lock:
             row = len(preview_buttons) // COLUMNS
             col = len(preview_buttons) % COLUMNS
 
-            btn = tkinter.Button(
-                frame,
-                text=filename + parse(tags),
-                image=tk_img,
-                command=lambda a=archive,f=filename: on_preview_click(a,f),
-                compound=tkinter.TOP,
-                state=state,
-                wraplength=450
-            )
+            btn = tkinter.Button(frame,text=filename + parse(tags),image=tk_img,command=lambda a=archive,f=filename: on_preview_click(a,f),compound=tkinter.TOP,state=state,wraplength=450)
             def show_menu(event):
                 global menu
                 if menu:
@@ -415,7 +399,7 @@ def on_loaded(future):
             btn.image = tk_img
             btn.bind("<Button-3>",show_menu)
             btn.grid(row=row, column=col, padx=5, pady=5)
-            preview_buttons.append(btn)
+            preview_buttons += [btn]
             load_indicator.configure(text=f"已加载：{len(preview_buttons)}/{total}")
 
     safe_ui_update(add_button)
@@ -428,9 +412,7 @@ def on_preview_click(archive,filename):
     with lock:
         if current_proc is not None:
             return
-        current_proc = subprocess.Popen(
-            ["python3", "mounter.py", archive, user_password, "mnt","-c",str(cache),"-o"]
-        )
+        current_proc = subprocess.Popen(["python3", "mounter.py", archive, user_password, "mnt","-c",str(cache),"-o"])
         log(f"[+] Attempted to mount {archive}")
         #subprocess.Popen(f"sleep 1 && open '{os.getcwd()}/mnt/{filename}'",shell=True)
         
@@ -468,11 +450,9 @@ def load_archives():
         sys.exit()
     root.deiconify()
     try:
-        archives = [
-            os.path.join(ARCHIVE_DIR, f)
-            for f in sorted(os.listdir(ARCHIVE_DIR))
-            if f.endswith(".7z")
-        ]
+        for i in os.listdir(ARCHIVE_DIR):
+            if i.endswith(".7z"):
+                archives += [os.path.join(ARCHIVE_DIR,i)]
     except:
         log(f"[!] No such directory: \"{ARCHIVE_DIR}\"")
 

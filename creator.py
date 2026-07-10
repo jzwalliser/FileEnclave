@@ -65,6 +65,5 @@ with open(src,"rb") as f: #打开文件
 
 
 print(f"Done creating encrypted archive: {output}")
-#print(file_password)
 if recovery:
     os.system(f"par2 create -n1 -r{recovery} {output}")
