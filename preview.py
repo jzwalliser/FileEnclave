@@ -37,6 +37,8 @@ def preview(file_path,quality=100,max_width=960,max_height=540):
     elif pathlib.Path(file_path).suffix in "." + ".".join(["mp3","wav","aac","m4a","flac","ogg","wma"]):
         print("audio")
         return add_background(PIL.Image.open("./icons/audio_file.png").convert("RGB"))
+    elif pathlib.Path(file_path).suffix in "." + ".".join(["7z","apk","dll","dmg","doc","exe","otf","ppt","ps","rar","tar","woff","zip","pptx","docx"]):
+        return add_background(PIL.Image.open(f"./icons/{pathlib.Path(file_path).suffix[1:]}.png").convert("RGB"))
     else:
         return add_background(PIL.Image.open("./icons/file.png").convert("RGB"))
 
