@@ -119,9 +119,39 @@ class InfoWindow(Modal):
         textpad = tkinter.scrolledtext.ScrolledText(master,width=80,height=10,font=("Noto Sans Mono",13))
         textpad.insert(tkinter.INSERT,self.info)
         textpad.configure(state=tkinter.DISABLED)
-        textpad.pack()    
+        textpad.pack()
+        buttons = tkinter.Frame(self.top)
+        buttons.pack()
+        ok_button = tkinter.Button(buttons,text="确定",command=self.apply)
+        ok_button.grid(row=0,column=0,ipadx=20,padx=20,pady=10)
+        cancel_button = tkinter.Button(buttons,text="取消",command=self.top.destroy)
+        cancel_button.grid(row=0,column=1,ipadx=20,padx=20,pady=10)
+        self.dir.bind("<Return>",self.apply)
 
-class CustomDialog(Modal):
+class DeleteWindow(Modal):
+    def __init__(self,master,info):
+        self.info = info
+        super().__init__(master,title="删除",customize_button=True)
+    def body(self,master):
+        textpad = tkinter.scrolledtext.ScrolledText(master,width=80,height=10,font=("Noto Sans Mono",13))
+        textpad.insert(tkinter.INSERT,self.info)
+        textpad.configure(state=tkinter.DISABLED)
+        textpad.pack()
+        buttons = tkinter.Frame(self.top)
+        buttons.pack()
+        ok_button = tkinter.Button(buttons,text="确定",command=self.apply)
+        ok_button.grid(row=0,column=0,ipadx=20,padx=20,pady=10)
+        cancel_button = tkinter.Button(buttons,text="取消",command=self.top.destroy)
+        cancel_button.grid(row=0,column=1,ipadx=20,padx=20,pady=10)
+        self.answer = False
+        return ok_button
+    def apply(self):
+        self.answer = True
+        print(self.answer)
+        self.top.destroy()
+    
+
+class LoginWindow(Modal):
     def __init__(self,master,default_path=None,default_password=None,cache=0):
         self.default_path = default_path
         self.default_password = default_password
@@ -132,7 +162,7 @@ class CustomDialog(Modal):
         folder = tkinter.filedialog.askdirectory()
         self.dir.delete(0,tkinter.END)
         self.dir.insert(tkinter.INSERT,folder)
-    def body(self, master):
+    def body(self,master):
         pathchooser = tkinter.Frame(master)
         pathchooser.grid(row=0,column=1)
         tkinter.Label(master, text="Path: ").grid(row=0)
@@ -162,8 +192,8 @@ class CustomDialog(Modal):
         buttons.pack()
         ok_button = tkinter.Button(buttons,text="确定",command=self.apply)
         ok_button.grid(row=0,column=0,ipadx=20,padx=20,pady=10)
-        ok_button = tkinter.Button(buttons,text="取消",command=self.top.destroy)
-        ok_button.grid(row=0,column=1,ipadx=20,padx=20,pady=10)
+        cancel_button = tkinter.Button(buttons,text="取消",command=self.top.destroy)
+        cancel_button.grid(row=0,column=1,ipadx=20,padx=20,pady=10)
         self.dir.bind("<Return>",self.apply)
         self.password.bind("<Return>",self.apply)
         return self.password # 初始焦点
@@ -213,6 +243,19 @@ def repair_file(file):
         tkinter.messagebox.showinfo("修复",output)
     thread = threading.Thread(target=newthread,args=[file])
     thread.start()
+
+def delete_file(archive,filename,button):
+    delete = DeleteWindow(root,f"你即将删除：{archive} ({filename})\n此操作无法恢复。是否继续？")
+    print(delete.answer)
+    if delete.answer:
+        os.system(f"rm {archive}*")
+        log(f"[+] Deleted: {archive}*")
+        preview_buttons.remove(button)
+        for idx,i in enumerate(preview_buttons):
+            row = idx // COLUMNS
+            col = idx % COLUMNS
+            idx += 1
+            i.grid(row=row, column=col, padx=5, pady=5)
     
 
 ARCHIVE_DIR = "./archives"
@@ -302,7 +345,7 @@ def on_close():
             current_proc = None
     enable_all()
     os.system("umount -l mnt")
-    log(f"[i] Attempted to umount mnt.")
+    log(f"[i] Attempted to umount mnt")
 
 def on_destroy():
     on_close()
@@ -405,6 +448,7 @@ def on_loaded(future):
                     menu.unpost()
                 menu = tkinter.Menu(btn,tearoff=0)
                 menu.add_command(label="修复",command=lambda: repair_file(archive))
+                menu.add_command(label="删除",command=lambda: delete_file(archive,filename,btn))
                 menu.add_command(label="文件信息",command=lambda: InfoWindow(root,f'路径：{pathlib.Path(archive).parent}\n加密：{pathlib.Path(archive).name}\n文件：{filename}\n标签：{" ".join(tags)}\n大小：{format_bytes(size)} ({size} Bytes)\n切片数量：{chunks}\n切片规格：{format_bytes(chunk_size)} ({chunk_size} Bytes)'))
                 menu.post(event.x_root, event.y_root)
                 
@@ -428,7 +472,7 @@ def on_preview_click(archive,filename):
         current_proc = subprocess.Popen(
             ["python3", "mounter.py", archive, user_password, "mnt","-c",str(cache),"-o"]
         )
-        log(f"[+] Attempted to mount {archive}.")
+        log(f"[+] Attempted to mount {archive}")
         #subprocess.Popen(f"sleep 1 && open '{os.getcwd()}/mnt/{filename}'",shell=True)
         
     disable_all()
@@ -458,7 +502,7 @@ def load_archives():
         log("[!] Failed to load config.json")
     print(ARCHIVE_DIR)
     root.withdraw()
-    dialog = CustomDialog(root,default_path=ARCHIVE_DIR,default_password=user_password,cache=cache)
+    dialog = LoginWindow(root,default_path=ARCHIVE_DIR,default_password=user_password,cache=cache)
     try:
         ARCHIVE_DIR,user_password,cache = dialog.path,dialog.passwd,dialog.cache_size
     except:
