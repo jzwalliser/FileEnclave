@@ -43,28 +43,30 @@ class MetadataError(Exception): #自定义异常
     pass
 
 class Modal(): #自定义对话框
-    def __init__(self,master,title="Topmost Dialog",resizable=(False,False),customize_button=False,esc=True,transistent=True):
+    def __init__(self,master,title="Topmost Dialog",resizable=(False,False),customize_button=False,esc=True,transient=True,geometry=None):
         self.top = tkinter.Toplevel(master)
+        if geometry:
+            self.top.geometry(geometry)
         frame = tkinter.Frame(self.top)
-        frame.pack()
+        frame.pack(fill=tkinter.BOTH)
         focus = self.body(frame)
         if focus:
             focus.focus_set()
         self.top.title(title)
         self.top.resizable(*resizable)
-        self.top.attributes("-topmost", True)
+        self.top.attributes("-topmost",True)
         self.top.grab_set()
-        if transistent:
+        if transient:
             self.top.transient(master)
-        self.top.protocol("WM_DELETE_WINDOW", self.top.destroy)
+        self.top.protocol("WM_DELETE_WINDOW",self.top.destroy)
         if not customize_button:
-            ok_btn = tkinter.Button(self.top, text="确定",command=self.top.destroy)
-            ok_btn.pack(pady=(0, 20))
+            ok_btn = tkinter.Button(self.top,text="确定",command=self.top.destroy)
+            ok_btn.pack(pady=(0,20))
         if esc:
             self.top.bind("<Escape>",lambda event: self.top.destroy())
         root.wait_window(self.top)
     def body(self,master):
-        tkinter.Label(master,text="Dialog").pack()
+        pass
 
 class LogWindow(Modal):
     def __init__(self,master,logs):
@@ -124,45 +126,55 @@ class LoginWindow(Modal):
         self.default_password = default_password
         self.warning = False
         self.default_cache = cache
-        super().__init__(master,title="登录",customize_button=True,transistent=False)
+        super().__init__(master,title="登录",customize_button=True,transient=False,geometry="1200x250")
     def choose_file(self):
         folder = tkinter.filedialog.askdirectory()
         self.dir.delete(0,tkinter.END)
         self.dir.insert(tkinter.INSERT,folder)
     def body(self,master):
-        pathchooser = tkinter.Frame(master)
-        pathchooser.grid(row=0,column=1)
-        tkinter.Label(master, text="Path: ").grid(row=0)
-        tkinter.Label(master, text="Password: ").grid(row=1)
-        tkinter.Label(master, text="Cache: ").grid(row=2)
-        self.dir = tkinter.Entry(pathchooser)
-        self.dir_button = tkinter.Button(pathchooser,text="Path",command=self.choose_file)
-        if self.default_path: self.dir.insert(0,self.default_path)
-        self.password = tkinter.Entry(master)
-        if self.default_password: self.password.insert(0,self.default_password)
-        self.dir.grid(row=0, column=1,ipadx=230)
-        self.dir_button.grid(row=0,column=2,padx=20)
-        self.password.grid(row=1, column=1,ipadx=300)
+        path_frame = tkinter.Frame(master)
+        path_frame.pack(fill=tkinter.X)
+        path_label = tkinter.Label(path_frame,text="路径：")
+        path_label.pack(side=tkinter.LEFT)
+        self.dir = tkinter.Entry(path_frame)
+        self.dir.pack(side=tkinter.LEFT,fill=tkinter.X,expand=True)
+        self.dir.bind("<Return>",self.apply)
+        dir_button = tkinter.Button(path_frame,text="Path",command=self.choose_file)
+        dir_button.pack(side=tkinter.LEFT,padx=10)
+        if self.default_path:
+            self.dir.insert(0,self.default_path)
+
+        password_frame = tkinter.Frame(master)
+        password_frame.pack(fill=tkinter.X)
+        password_label = tkinter.Label(password_frame,text="密码：")
+        password_label.pack(side=tkinter.LEFT)
+        self.password = tkinter.Entry(password_frame)
+        self.password.pack(side=tkinter.LEFT,fill=tkinter.X,expand=True,padx=(0,10))
+        self.password.bind("<Return>",self.apply)
+        if self.default_password:
+            self.password.insert(0,self.default_password)
+
         cache_frame = tkinter.Frame(master)
-        cache_frame.grid(row=2, column=1)
+        cache_frame.pack(fill=tkinter.X)
+        cache_label = tkinter.Label(cache_frame,text="缓存：")
+        cache_label.pack(side=tkinter.LEFT)
         self.cache = tkinter.ttk.Combobox(cache_frame,values=["不启用","1 MB","2 MB","4 MB","8 MB","16 MB","32 MB","64 MB","128 MB","256 MB"])
-        self.cache.grid(row=0,column=0,ipadx=150)
-        self.cache_show = tkinter.Label(cache_frame,width=20)
-        self.cache_show.grid(row=0,column=1)
+        self.cache.pack(side=tkinter.LEFT,fill=tkinter.X,expand=True)
+        self.cache_show = tkinter.Label(cache_frame)
+        self.cache_show.pack(side=tkinter.LEFT,padx=10)
         self.cache.bind("<<ComboboxSelected>>",self.update_size)
         self.cache.bind("<KeyRelease>",self.update_size)
         self.cache.insert(tkinter.INSERT,shared.format_bytes(self.default_cache))
         if self.default_cache == 0:
             self.cache.current(0)
         self.update_size()
-        buttons = tkinter.Frame(self.top)
-        buttons.pack()
-        ok_button = tkinter.Button(buttons,text="确定",command=self.apply)
+
+        buttons_frame = tkinter.Frame(master)
+        buttons_frame.pack()
+        ok_button = tkinter.Button(buttons_frame,text="确定",command=self.apply)
         ok_button.grid(row=0,column=0,ipadx=20,padx=20,pady=10)
-        cancel_button = tkinter.Button(buttons,text="取消",command=self.top.destroy)
+        cancel_button = tkinter.Button(buttons_frame,text="取消",command=self.top.destroy)
         cancel_button.grid(row=0,column=1,ipadx=20,padx=20,pady=10)
-        self.dir.bind("<Return>",self.apply)
-        self.password.bind("<Return>",self.apply)
         return self.password # 初始焦点
     def apply(self,event=None):
         self.path = self.dir.get()
@@ -229,7 +241,7 @@ def delete_file(archive,filename,button):
             row = idx // columns
             col = idx % columns
             idx += 1
-            i.grid(row=row, column=col, padx=5, pady=5)
+            i.grid(row=row,column=col,padx=5,pady=5)
 
 def search_file(event=None):
     idx = 0
@@ -240,7 +252,7 @@ def search_file(event=None):
             row = idx // columns
             col = idx % columns
             idx += 1
-            i.grid(row=row, column=col, padx=5, pady=5)
+            i.grid(row=row,column=col,padx=5,pady=5)
 
 def delete_search():
     search_entry.delete(0,tkinter.END)
@@ -278,23 +290,23 @@ def on_destroy():
 
 def load_preview(archive):
     try:
-        meta = json.loads(sevenzipwrapper.read_file(archive, "metadata").decode("utf-8"))
+        meta = json.loads(sevenzipwrapper.read_file(archive,"metadata").decode("utf-8"))
     except:
         raise MetadataError(archive)
     salt = meta["salt"]
 
-    user_pwd = passwordutil.hash(user_password, salt)
-    file_pwd = sevenzipwrapper.read_file(archive, "password", password=user_pwd).decode("utf-8")
+    user_pwd = passwordutil.hash(user_password,salt)
+    file_pwd = sevenzipwrapper.read_file(archive,"password",password=user_pwd).decode("utf-8")
     #print("{" + archive + " " + file_pwd + "|" + user_pwd + "}")
 
     original_meta = json.loads(
-        sevenzipwrapper.read_file(archive, "original_metadata", user_pwd).decode("utf-8"))
+        sevenzipwrapper.read_file(archive,"original_metadata",user_pwd).decode("utf-8"))
 
-    preview_bytes = sevenzipwrapper.read_file(archive, "preview", password=file_pwd)
+    preview_bytes = sevenzipwrapper.read_file(archive,"preview",password=file_pwd)
 
     img = PIL.Image.open(io.BytesIO(preview_bytes))
     img = img.resize((480,270))
-    return archive, img, original_meta["filename"],original_meta["tags"],original_meta["size"],meta["chunks"],meta["chunk_size"]
+    return archive,img,original_meta["filename"],original_meta["tags"],original_meta["size"],meta["chunks"],meta["chunk_size"]
 
 def hide_menu(event):
     global menu
@@ -311,7 +323,7 @@ def parse(tags):
 def on_loaded(future):
     global total
     try:
-        archive, img, filename,tags,size,chunks,chunk_size = future.result()
+        archive,img,filename,tags,size,chunks,chunk_size = future.result()
         log(f"[+] Loaded archive: {archive}")
     except Exception as e:
         if isinstance(e,RuntimeError):
@@ -341,11 +353,11 @@ def on_loaded(future):
                 menu.add_command(label="修复",command=lambda: repair_file(archive))
                 menu.add_command(label="删除",command=lambda: delete_file(archive,filename,btn))
                 menu.add_command(label="文件信息",command=lambda: InfoWindow(root,f'路径：{pathlib.Path(archive).parent}\n加密：{pathlib.Path(archive).name}\n文件：{filename}\n标签：{" ".join(tags)}\n大小：{shared.format_bytes(size)} ({size} Bytes)\n切片数量：{chunks}\n切片规格：{shared.format_bytes(chunk_size)} ({chunk_size} Bytes)'))
-                menu.post(event.x_root, event.y_root)
+                menu.post(event.x_root,event.y_root)
                 
             btn.image = tk_img
             btn.bind("<Button-3>",show_menu)
-            btn.grid(row=row, column=col, padx=5, pady=5)
+            btn.grid(row=row,column=col,padx=5,pady=5)
             preview_buttons += [btn]
             load_indicator.configure(text=f"已加载：{len(preview_buttons)}/{total}",value=int(len(preview_buttons) / total * 100))
             if len(preview_buttons) == total:
@@ -353,14 +365,14 @@ def on_loaded(future):
                 root.after(1000,lambda: load_indicator.configure(text="已全部加载完毕"))
                 root.after(3000,lambda: load_indicator.pack_forget())
             
-    root.after(0, add_button)
+    root.after(0,add_button)
 
 def on_preview_click(archive,filename):
     global current_proc
     with lock:
         if current_proc is not None:
             return
-        current_proc = subprocess.Popen(["python3", "mounter.py", archive, user_password, "mnt","-c",str(cache),"-o"])
+        current_proc = subprocess.Popen(["python3","mounter.py",archive,user_password,"mnt","-c",str(cache),"-o"])
         log(f"[+] Attempted to mount {archive}")
         
     disable_all()
@@ -404,7 +416,7 @@ def load_archives():
     total = len(archives)
     executor = concurrent.futures.ThreadPoolExecutor(max_workers=4)
     for archive in archives:
-        future = executor.submit(load_preview, archive)
+        future = executor.submit(load_preview,archive)
         future.add_done_callback(on_loaded)
 
 root = ttkbootstrap.Window()
@@ -431,7 +443,7 @@ search_delete.pack(side=tkinter.RIGHT)
 log_button = ttkbootstrap.Button(top_banner,text="Logs",command=lambda: LogWindow(root,logs))
 log_button.grid(row=0,column=1,padx=10)
 
-umount = tkinter.ttk.Button(top_banner, text="卸载卷/修复", command=on_close)
+umount = tkinter.ttk.Button(top_banner,text="卸载卷",command=on_close)
 umount.grid(row=0,column=2,padx=10)
 
 repair_everything = ttkbootstrap.Button(top_banner,text="检查修复所有文件",command=repair_all)
@@ -440,18 +452,18 @@ repair_everything.grid(row=0,column=3,padx=10)
 preview_frame = tkinter.Frame()
 preview_frame.pack(fill="both",expand=True)
 canvas = tkinter.Canvas(preview_frame)
-scrollbar = tkinter.ttk.Scrollbar(preview_frame, orient="vertical", command=canvas.yview)
+scrollbar = tkinter.ttk.Scrollbar(preview_frame,orient="vertical",command=canvas.yview)
 frame = tkinter.ttk.Frame(canvas)
-frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox(tkinter.ALL)))
-canvas.create_window((0,0), window=frame, anchor="nw")
+frame.bind("<Configure>",lambda e: canvas.configure(scrollregion=canvas.bbox(tkinter.ALL)))
+canvas.create_window((0,0),window=frame,anchor="nw")
 canvas.configure(yscrollcommand=scrollbar.set)
-canvas.pack(side="left", fill="both", expand=True)
-scrollbar.pack(side="right", fill="y")
+canvas.pack(side="left",fill="both",expand=True)
+scrollbar.pack(side="right",fill="y")
 
 load_indicator = ttkbootstrap.Floodgauge(root,text="已加载：0/0")
 load_indicator.pack(fill=tkinter.X)
 root.protocol("WM_DELETE_WINDOW",on_destroy)
 
-root.bind("<Button-1>", hide_menu)
-root.after(100, load_archives)
+root.bind("<Button-1>",hide_menu)
+root.after(100,load_archives)
 root.mainloop()
