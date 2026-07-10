@@ -38,6 +38,7 @@ cache = 0
 executor = None
 state = tkinter.NORMAL #当前所有按钮的状态
 archives = []
+info_password = False
 
 class MetadataError(Exception): #自定义异常
     pass
@@ -95,7 +96,7 @@ class InfoWindow(Modal):
         self.info = info
         super().__init__(master,title="文件信息",resizable=(True,True))
     def body(self,master):
-        textpad = tkinter.scrolledtext.ScrolledText(master,width=80,height=10,font=("Noto Sans Mono",13))
+        textpad = tkinter.scrolledtext.ScrolledText(master,width=80,height=15,font=("Noto Sans Mono",13))
         textpad.insert(tkinter.INSERT,self.info)
         textpad.configure(state=tkinter.DISABLED)
         textpad.pack(fill=tkinter.BOTH,expand=True)
@@ -179,7 +180,7 @@ class LoginWindow(Modal):
         self.info_show_password_var = tkinter.IntVar()
         info_show_passwords = ttkbootstrap.Checkbutton(master,text="展示盐和密码（仅调试用）",variable=self.info_show_password_var)
         info_show_passwords.pack(anchor=tkinter.W,padx=10)
-        self.info_show_password_var.set(value=1)
+        self.info_show_password_var.set(value=0)
 
         buttons_frame = tkinter.Frame(master)
         buttons_frame.pack()
@@ -307,11 +308,10 @@ def load_preview(archive):
         meta = json.loads(sevenzipwrapper.read_file(archive,"metadata").decode("utf-8"))
     except:
         raise MetadataError(archive)
+    
     salt = meta["salt"]
-
     user_pwd = passwordutil.hash(user_password,salt)
     file_pwd = sevenzipwrapper.read_file(archive,"password",password=user_pwd).decode("utf-8")
-    #print("{" + archive + " " + file_pwd + "|" + user_pwd + "}")
 
     original_meta = json.loads(sevenzipwrapper.read_file(archive,"original_metadata",user_pwd).decode("utf-8"))
     filename = original_meta["filename"]
@@ -322,7 +322,7 @@ def load_preview(archive):
     
     img = PIL.Image.open(io.BytesIO(sevenzipwrapper.read_file(archive,"preview",password=file_pwd)))
     img = img.resize((480,270))
-    return archive,img,filename,tags,size,chunk_num,chunk_size
+    return archive,img,filename,tags,size,chunk_num,chunk_size,salt,file_pwd,user_pwd
 
 def hide_menu(event):
     global menu
@@ -339,7 +339,7 @@ def parse(tags):
 def on_loaded(future):
     global total
     try:
-        archive,img,filename,tags,size,chunk_num,chunk_size = future.result()
+        archive,img,filename,tags,size,chunk_num,chunk_size,salt,file_pwd,user_pwd = future.result()
         log(f"[+] Loaded archive: {archive}")
     except Exception as e:
         if isinstance(e,RuntimeError):
@@ -365,10 +365,27 @@ def on_loaded(future):
                 global menu
                 if menu:
                     menu.unpost()
+                file_info = f"=====文件信息=====\n"
+                file_info += f"路径：{pathlib.Path(archive).parent}\n"
+                file_info += f"加密：{pathlib.Path(archive).name}\n"
+                file_info += f"文件：{filename}\n"
+                file_info += f"大小：{shared.format_bytes(size)} ({size} Bytes)\n"
+                file_info += f"=====存储信息=====\n"
+                file_info += f"切片数量：{chunk_num}\n"
+                file_info += f"切片规格：{shared.format_bytes(chunk_size)} ({chunk_size} Bytes)\n"
+                if info_password:
+                    file_info += f"=====加密信息=====\n"
+                    file_info += f"盐：{salt}\n"
+                    file_info += f"一级密码：{user_pwd}\n"
+                    file_info += f"二级密码：{file_pwd}\n"
+                if tags:
+                    file_info += f"=====其它信息=====\n"
+                    file_info += f"标签：{parse(tags)}\n"
+                
                 menu = tkinter.Menu(btn,tearoff=0)
                 menu.add_command(label="修复",command=lambda: repair_file(archive))
                 menu.add_command(label="删除",command=lambda: delete_file(archive,filename,btn))
-                menu.add_command(label="文件信息",command=lambda: InfoWindow(root,f'路径：{pathlib.Path(archive).parent}\n加密：{pathlib.Path(archive).name}\n文件：{filename}\n标签：{parse(tags)}\n大小：{shared.format_bytes(size)} ({size} Bytes)\n切片数量：{chunk_num}\n切片规格：{shared.format_bytes(chunk_size)} ({chunk_size} Bytes)'))
+                menu.add_command(label="文件信息",command=lambda: InfoWindow(root,file_info))
                 menu.post(event.x_root,event.y_root)
                 
             btn.image = tk_img
@@ -396,6 +413,7 @@ def open_file(archive,filename):
 def load_archives():
     global user_password
     global archive_dir
+    global info_password
     global archives
     global total
     global cache
@@ -413,7 +431,7 @@ def load_archives():
     
     dialog = LoginWindow(root,default_path=archive_dir,default_password=user_password,cache=cache)
     try:
-        archive_dir,user_password,cache = dialog.path,dialog.passwd,dialog.cache_size
+        archive_dir,user_password,cache,info_password = dialog.path,dialog.passwd,dialog.cache_size,dialog.info_show_password_var.get()
     except:
         root.destroy()
         sys.exit()
@@ -455,7 +473,7 @@ search_entry.bind("<Return>",search_file)
 
 search_button = tkinter.Button(search_frame,text="搜索",command=search_file)
 search_button.grid(row=0,column=1,padx=10)
-search_reset = tkinter.Button(search_entry,text=tkinter.X,command=reset_search,cursor="arrow")
+search_reset = tkinter.Button(search_entry,text="x",command=reset_search,cursor="arrow")
 search_reset.pack(side=tkinter.RIGHT)
 
 log_button = ttkbootstrap.Button(top_banner,text="Logs",command=lambda: LogWindow(root,logs))
@@ -468,15 +486,15 @@ repair_everything = ttkbootstrap.Button(top_banner,text="检查修复所有文�
 repair_everything.grid(row=0,column=3,padx=10)
 
 preview_frame = tkinter.Frame()
-preview_frame.pack(fill="both",expand=True)
+preview_frame.pack(fill=tkinter.BOTH,expand=True)
 canvas = tkinter.Canvas(preview_frame)
 scrollbar = tkinter.ttk.Scrollbar(preview_frame,orient="vertical",command=canvas.yview)
 frame = tkinter.ttk.Frame(canvas)
 frame.bind("<Configure>",lambda e: canvas.configure(scrollregion=canvas.bbox(tkinter.ALL)))
-canvas.create_window((0,0),window=frame,anchor="nw")
+canvas.create_window((0,0),window=frame,anchor=tkinter.NW)
 canvas.configure(yscrollcommand=scrollbar.set)
-canvas.pack(side="left",fill="both",expand=True)
-scrollbar.pack(side="right",fill="y")
+canvas.pack(side=tkinter.LEFT,fill=tkinter.BOTH,expand=True)
+scrollbar.pack(side="right",fill=tkinter.Y)
 
 load_indicator = ttkbootstrap.Floodgauge(root,text="已加载：0/0")
 load_indicator.pack(fill=tkinter.X)
