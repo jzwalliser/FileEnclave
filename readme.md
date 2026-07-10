@@ -107,8 +107,11 @@ GUI部分的界面是tkinter写的，用了ttkbootstrap进行美化。
 
 
 # 待办
-preview可以解析其它文件
-搞一批图标，当文件无法解析的时候用图标
+Refactor preview.py  
+用https://ttkbootstrap.readthedocs.io/en/latest/zh/api/tooltip/#ttkbootstrap.tooltip.ToolTip  
+美化scrollbar  
+写好注释  
+组件从tkinter.Button等替换为ttkbootstrap.Button  
 
 # 一些其他解释
 CLI工具内的一些内容用的是英文写的，GUI界面用的是中文。  
