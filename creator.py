@@ -44,20 +44,16 @@ if os.path.exists(output): #检测覆写
     else:
         sys.exit() #用户拒绝覆写，退出
 
-sevenzipwrapper.write_file(output,"password",file_password.encode("utf-8"),user_password)
-#subprocess.run(["7z","a","-t7z",output,"-sipassword","-p" + user_password,"-mhe=off"],input=file_password.encode("utf-8"),check=True) #加入秘钥，用用户派生秘钥加密
-sevenzipwrapper.write_file(output,"preview",preview.preview(src),file_password)
-#subprocess.run(["7z","a","-t7z",output,"-sipreview","-p" + file_password,"-mhe=off"],input=preview.preview(src),check=True) #加入预览，用随机秘钥加密
-
+sevenzipwrapper.write_file(output,"password",file_password.encode("utf-8"),user_password) #加入秘钥，用用户派生秘钥加密
+sevenzipwrapper.write_file(output,"preview",preview.preview(src),file_password) #加入预览，用随机秘钥加密
 metadata = {"chunks": chunks,"chunk_size": chunk_size,"salt":salt} #元数据
-sevenzipwrapper.write_file(output,"metadata",json.dumps(metadata).encode("utf-8"))
-#subprocess.run(["7z","a","-t7z",output,"-simetadata","-mhe=off"],input=json.dumps(metadata).encode("utf-8"),check=True) #加入元数据，不加密
+sevenzipwrapper.write_file(output,"metadata",json.dumps(metadata).encode("utf-8")) #加入元数据，不加密
 
 original_metadata = {"size": size,"filename":src.split("/")[-1],"atime":stats.st_atime,"ctime":stats.st_ctime,"mtime":stats.st_mtime} #加密元数据
 if additional_meta:
     original_metadata = original_metadata | json.loads(additional_meta)
-sevenzipwrapper.write_file(output,"original_metadata",json.dumps(original_metadata).encode("utf-8"),user_password)
-#subprocess.run(["7z","a","-t7z",output,"-sioriginal_metadata","-p" + user_password,"-mhe=off"],input=json.dumps(original_metadata).encode("utf-8"),check=True) #加密元数据
+sevenzipwrapper.write_file(output,"original_metadata",json.dumps(original_metadata).encode("utf-8"),user_password) #加密元数据
+
 
 with open(src,"rb") as f: #打开文件
     for i in range(chunks): #分块
@@ -65,8 +61,8 @@ with open(src,"rb") as f: #打开文件
         if not chunk: #读到尾了
             break #结束循环
         print(i)
-        sevenzipwrapper.write_file(output,f"{i}",chunk,file_password)
-        #subprocess.run(["7z","a","-t7z",output,f"-si{i}","-p" + file_password,"-mhe=off"],input=chunk,check=True) #加入切块，用随机秘钥机密
+        sevenzipwrapper.write_file(output,f"{i}",chunk,file_password) #加入切块，用随机秘钥加密
+
 
 print(f"Done creating encrypted archive: {output}")
 #print(file_password)

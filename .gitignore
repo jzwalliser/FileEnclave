@@ -7,4 +7,5 @@ example.txt
 start_workspace.py
 experiment/
 update.sh
+ignored/
 !.gitignore

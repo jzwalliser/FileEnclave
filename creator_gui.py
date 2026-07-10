@@ -10,6 +10,8 @@ import ttkbootstrap
 import preview
 import PIL
 import io
+import threading
+
 
 class Tk(ttkbootstrap.Window,tkinterdnd2.TkinterDnD.Tk): pass
 
@@ -64,11 +66,11 @@ drop_frame = tkinter.LabelFrame(left_frame, text="拖拽文件到此处", width=
 drop_frame.pack(ipady=30, pady=(0, 10), fill="x")
 drop_frame.pack_propagate(False)
 
-drop_label = tkinter.Label(drop_frame, text="📂 拖拽一个文件进来", fg="gray")
+drop_label = tkinter.Label(drop_frame, text="📂 拖拽一个文件进来", fg="gray",wraplength=450)
 drop_label.pack(expand=True)
 
 preview_pic = tkinter.Label(left_frame,text="预览图")
-preview_pic.pack(ipady=30, pady=(0, 10), fill="x")
+preview_pic.pack(ipady=0, pady=(0, 10), fill="x")
 tk_img = None
 
 def on_drop(event):
@@ -123,14 +125,29 @@ tkinter.Spinbox(
 # ========================
 # 左侧：执行按钮
 # ========================
-def sha1_md5(file_path: str) -> str:
+def sha1_md5(file_path):
     with open(file_path, "rb") as f:
         sha1 = hashlib.sha1(f.read()).hexdigest()
     return hashlib.md5(sha1.encode("utf-8")).hexdigest()
 
+def run_cmd(cmd):
+    try:
+        proc = subprocess.run(cmd,check=True)
+    except subprocess.CalledProcessError as e:
+        err = e
+    else:
+        err = None
+    finally:
+        root.after(0, on_finish, err)
+
+def on_finish(err):
+    if err:
+        tkinter.messagebox.showerror("执行失败", str(e))
+    else:
+        tkinter.messagebox.showinfo("成功", "creator.py 执行完成 ✅")
+
 def run_creator():
     global file_path
-
     if not file_path or not os.path.exists(file_path):
         tkinter.messagebox.showerror("错误", "请先拖拽一个文件")
         return
@@ -158,15 +175,12 @@ def run_creator():
         "-m", f'{{"tags":[{tags_json}]}}',
         "-c", str(chunk_size)
     ]
+    
     if rec_percentage != 0:
         print("rec")
         cmd += ["-r",str(rec_percentage)]
 
-    try:
-        subprocess.run(cmd, check=True)
-        tkinter.messagebox.showinfo("成功", "creator.py 执行完成 ✅")
-    except subprocess.CalledProcessError as e:
-        tkinter.messagebox.showerror("执行失败", str(e))
+    threading.Thread(target=run_cmd,args=[cmd],daemon=True).start()
 
 tkinter.Button(
     left_frame, text="🚀 执行 creator.py",
@@ -180,30 +194,84 @@ tkinter.Button(
 right_container = tkinter.LabelFrame(right_frame, text="标签设置")
 right_container.pack(fill="both", expand=True)
 
+edit_mode = False
+def edit():
+    global edit_mode
+    if edit_mode:
+        edit_mode = False
+        edit_tags.configure(text="编辑标签",bootstyle=ttkbootstrap.constants.PRIMARY)
+        tag_append.grid_forget()
+    else:
+        edit_mode = True
+        edit_tags.configure(text="完成编辑（右键标签即可将其删除）",bootstyle=ttkbootstrap.constants.SUCCESS)
+        tag_append.grid(row=len(tag_buttons) // 3, column=len(tag_buttons) % 3, padx=5, pady=5, sticky="w")
+
 # Tags 输入框
 frame_tags = tkinter.Frame(right_container)
 frame_tags.pack(fill="x", padx=10, pady=10)
 
-tkinter.Label(frame_tags, text="标签（空格分隔）：").pack(anchor="w")
+edit_tags = ttkbootstrap.Button(frame_tags,text="编辑标签",command=edit)
+edit_tags.pack(fill="x")
+
+tags_label = tkinter.Label(frame_tags, text="标签（空格分隔）：")
+tags_label.pack(anchor="w")
 tags_var = tkinter.StringVar()
 tkinter.Entry(frame_tags, textvariable=tags_var, width=30).pack(fill="x", pady=(5, 10))
+
 
 # 快捷标签按钮
 frame_buttons = tkinter.Frame(right_container)
 frame_buttons.pack(fill="both", expand=True, padx=10, pady=(0, 10))
+tag_buttons = []
 
-def add_tag(tag):
+def user_add(event):
+    tag_name = tag_append.get()
+    for i in tag_buttons:
+        if i["text"] == tag_name:
+            i.configure(bootstyle=(ttkbootstrap.constants.INFO,ttkbootstrap.constants.OUTLINE))
+            root.after(1000,lambda btn=i: i.configure(bootstyle=ttkbootstrap.constants.PRIMARY))
+            return
+    add_tag(tag_name)
+    tag_append.grid(row=len(tag_buttons) // 3, column=len(tag_buttons) % 3, padx=5, pady=5, sticky="w")
+    tag_append.delete(0,tkinter.END)
+    
+tag_append = tkinter.Entry(frame_buttons,width=9)
+tag_append.bind("<Return>",user_add)
+
+def del_tag(event,tag):
+    if not edit_mode:
+        return
+    for i in tag_buttons:
+        print(i["text"],tag)
+        if i["text"] == tag:
+            tag_buttons.remove(i)
+            break
+    for i in range(len(tag_buttons)):
+        tag_buttons[i].grid(row=i // 3, column=i % 3, padx=5, pady=5, sticky="w")
+    tag_append.grid(row=len(tag_buttons) // 3, column=len(tag_buttons) % 3, padx=5, pady=5, sticky="w")
+
+def insert_tag(tag):
     current = tags_var.get().strip()
     if current and not current.endswith(" "):
         tags_var.set(current + " " + tag)
     else:
         tags_var.set(current + tag)
 
-for i, tag in enumerate(tags):
-    tkinter.Button(
+def add_tag(tag):
+    for i in tag_buttons:
+        if i["text"] == tag:
+            return
+    tag_button = ttkbootstrap.Button(
         frame_buttons, text=tag, width=8,
-        command=lambda t=tag: add_tag(t)
-    ).grid(row=i // 3, column=i % 3, padx=5, pady=5, sticky="w")
+        command=lambda t=tag: insert_tag(t)
+    )
+    tag_button.grid(row=len(tag_buttons) // 3, column=len(tag_buttons) % 3, padx=5, pady=5, sticky="w")
+    tag_button.bind("<Button-3>",lambda event,t=tag: del_tag(event,t))
+    tag_buttons.append(tag_button)
+
+for i in tags:
+    add_tag(i)
+    
 
 # ========================
 # 启动

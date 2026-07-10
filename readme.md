@@ -107,8 +107,5 @@ GUI部分的界面是tkinter写的，用了ttkbootstrap进行美化。
 
 
 # 待办
-meta_editor修改文件的时候，需要重新产生恢复数据
-creator_gui可以自行添加/修改tag
-creator_gui可以显示预览图
 preview可以解析其它文件
 搞一批图标，当文件无法解析的时候用图标
