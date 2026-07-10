@@ -36,6 +36,8 @@ menu = None
 total = 0
 cache = 0
 executor = None
+state = tkinter.NORMAL #当前所有按钮的状态
+archives = []
 
 class MetadataError(Exception): #自定义异常
     pass
@@ -88,7 +90,7 @@ class LogWindow(Modal):
 class InfoWindow(Modal):
     def __init__(self,master,info):
         self.info = info
-        super().__init__(master,title="文件信息",)
+        super().__init__(master,title="文件信息")
     def body(self,master):
         textpad = tkinter.scrolledtext.ScrolledText(master,width=80,height=10,font=("Noto Sans Mono",13))
         textpad.insert(tkinter.INSERT,self.info)
@@ -244,24 +246,19 @@ def delete_search():
     search_entry.delete(0,tkinter.END)
     search_file()
 
-def safe_ui_update(fn):
-    """确保所有 UI 操作回到主线程"""
-    root.after(0, fn)
-
-state = tkinter.NORMAL
 def disable_all():
     global state
     state = tkinter.DISABLED
     with lock:
         for btn in preview_buttons:
-            btn.config(state="disabled")
+            btn.config(state=state)
 
 def enable_all():
     global state
     state = tkinter.NORMAL
     with lock:
         for btn in preview_buttons:
-            btn.config(state="normal")
+            btn.config(state=state)
 
 def on_close():
     global current_proc
@@ -350,9 +347,13 @@ def on_loaded(future):
             btn.bind("<Button-3>",show_menu)
             btn.grid(row=row, column=col, padx=5, pady=5)
             preview_buttons += [btn]
-            load_indicator.configure(text=f"已加载：{len(preview_buttons)}/{total}")
-
-    safe_ui_update(add_button)
+            load_indicator.configure(text=f"已加载：{len(preview_buttons)}/{total}",value=int(len(preview_buttons) / total * 100))
+            if len(preview_buttons) == total:
+                load_indicator.configure(bootstyle=ttkbootstrap.constants.SUCCESS)
+                root.after(1000,lambda: load_indicator.configure(text="已全部加载完毕"))
+                root.after(3000,lambda: load_indicator.pack_forget())
+            
+    root.after(0, add_button)
 
 def on_preview_click(archive,filename):
     global current_proc
@@ -381,7 +382,6 @@ def load_archives():
     except:
         archive_dir = None
         log("[!] Failed to load config.json")
-    root.withdraw()
     dialog = LoginWindow(root,default_path=archive_dir,default_password=user_password,cache=cache)
     try:
         archive_dir,user_password,cache = dialog.path,dialog.passwd,dialog.cache_size
@@ -406,44 +406,50 @@ def load_archives():
     for archive in archives:
         future = executor.submit(load_preview, archive)
         future.add_done_callback(on_loaded)
+
 root = ttkbootstrap.Window()
 root.title("Encrypted Archive Viewer")
 root.geometry("2200x1200")
-archives = []
+root.withdraw()
+
 top_banner = tkinter.ttk.Frame(root)
-top_banner.pack(fill="x")
+top_banner.pack(fill=tkinter.X)
+
 search_frame = tkinter.ttk.LabelFrame(top_banner,text="搜索")
 search_frame.grid(row=0,column=0,padx=20)
+
 search_entry = tkinter.Entry(search_frame)
 search_entry.grid(row=0,column=0,padx=10,pady=10,ipadx=520)
 search_entry.pack_propagate(False)
+search_entry.bind("<Return>",search_file)
+
 search_button = tkinter.Button(search_frame,text="搜索",command=search_file)
 search_button.grid(row=0,column=1,padx=10)
-search_entry.bind("<Return>",search_file)
-search_delete = tkinter.Button(search_entry,text="x",command=delete_search,cursor="arrow")
+search_delete = tkinter.Button(search_entry,text=tkinter.X,command=delete_search,cursor="arrow")
 search_delete.pack(side=tkinter.RIGHT)
+
+log_button = ttkbootstrap.Button(top_banner,text="Logs",command=lambda: LogWindow(root,logs))
+log_button.grid(row=0,column=1,padx=10)
+
+umount = tkinter.ttk.Button(top_banner, text="卸载卷/修复", command=on_close)
+umount.grid(row=0,column=2,padx=10)
+
 repair_everything = ttkbootstrap.Button(top_banner,text="检查修复所有文件",command=repair_all)
-repair_everything.grid(row=0,column=3,padx=20)
+repair_everything.grid(row=0,column=3,padx=10)
 
-canvas = tkinter.Canvas(root)
-scrollbar = tkinter.ttk.Scrollbar(root, orient="vertical", command=canvas.yview)
+preview_frame = tkinter.Frame()
+preview_frame.pack(fill="both",expand=True)
+canvas = tkinter.Canvas(preview_frame)
+scrollbar = tkinter.ttk.Scrollbar(preview_frame, orient="vertical", command=canvas.yview)
 frame = tkinter.ttk.Frame(canvas)
-
-canvas.create_window((0, 0), window=frame, anchor="nw")
+frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox(tkinter.ALL)))
+canvas.create_window((0,0), window=frame, anchor="nw")
 canvas.configure(yscrollcommand=scrollbar.set)
 canvas.pack(side="left", fill="both", expand=True)
 scrollbar.pack(side="right", fill="y")
 
-frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
-
-load_frame = tkinter.Frame(top_banner)
-load_frame.grid(row=0,column=1)
-umount = tkinter.ttk.Button(load_frame, text="卸载卷/修复", command=on_close)
-umount.grid(row=0,column=0,pady=10)
-load_indicator = tkinter.ttk.Label(load_frame,text="已加载：0/0")
-load_indicator.grid(row=1,column=0)
-log_button = ttkbootstrap.Button(top_banner,text="Logs",command=lambda: LogWindow(root,logs))
-log_button.grid(row=0,column=2)
+load_indicator = ttkbootstrap.Floodgauge(root,text="已加载：0/0")
+load_indicator.pack(fill=tkinter.X)
 root.protocol("WM_DELETE_WINDOW",on_destroy)
 
 root.bind("<Button-1>", hide_menu)
