@@ -23,6 +23,7 @@ import tkinter.scrolledtext
 
 import passwordutil
 import sevenzipwrapper
+import shared
 
 class MetadataError(Exception):
     pass
@@ -33,38 +34,6 @@ def log(log_text):
         logs += f'[{time.strftime("%Y-%m-%d %H:%M:%S",time.localtime())}]' + log_text + "\n"
 
 logs = ""
-
-def format_bytes(size): #转换大小
-    units = ["Bytes", "KB", "MB", "GB", "TB"]
-    if size < 1024:
-        return f"{size} {units[0]}"
-
-    value = float(size)
-    unit_index = 0
-
-    while value >= 1024 and unit_index < len(units) - 1:
-        value /= 1024
-        unit_index += 1
-
-    # 保留两位小数并去掉末尾的 0
-    formatted = f"{value:.2f}".rstrip("0").rstrip(".")
-    return f"{formatted} {units[unit_index]}"
-
-def get_bytes(size):
-    size = size.strip().lower()
-    match = re.fullmatch(r'(\d+(?:\.\d+)?)\s*([kmgtp]?b?)?', size)
-    if not match:
-        return 0
-    num_str, unit = match.groups()
-    num = float(num_str)
-    if unit is None or unit == '' or unit == 'b':
-        return int(num)
-    unit = unit.rstrip('b')  # k → kb / k 都支持
-
-    units = {'k': 1024,'m': 1024 ** 2,'g': 1024 ** 3,'t': 1024 ** 4,'p': 1024 ** 5}
-    if unit not in units:
-        return 0
-    return int(num * units[unit])
 
 class Modal():
     def body(self,master):
@@ -114,19 +83,12 @@ class LogWindow(Modal):
 class InfoWindow(Modal):
     def __init__(self,master,info):
         self.info = info
-        super().__init__(master,title="文件信息")
+        super().__init__(master,title="文件信息",)
     def body(self,master):
         textpad = tkinter.scrolledtext.ScrolledText(master,width=80,height=10,font=("Noto Sans Mono",13))
         textpad.insert(tkinter.INSERT,self.info)
         textpad.configure(state=tkinter.DISABLED)
         textpad.pack()
-        buttons = tkinter.Frame(self.top)
-        buttons.pack()
-        ok_button = tkinter.Button(buttons,text="确定",command=self.apply)
-        ok_button.grid(row=0,column=0,ipadx=20,padx=20,pady=10)
-        cancel_button = tkinter.Button(buttons,text="取消",command=self.top.destroy)
-        cancel_button.grid(row=0,column=1,ipadx=20,padx=20,pady=10)
-        self.dir.bind("<Return>",self.apply)
 
 class DeleteWindow(Modal):
     def __init__(self,master,info):
@@ -147,7 +109,6 @@ class DeleteWindow(Modal):
         return ok_button
     def apply(self):
         self.answer = True
-        print(self.answer)
         self.top.destroy()
     
 
@@ -184,7 +145,7 @@ class LoginWindow(Modal):
         self.cache_show.grid(row=0,column=1)
         self.cache.bind("<<ComboboxSelected>>",self.update_size)
         self.cache.bind("<KeyRelease>",self.update_size)
-        self.cache.insert(tkinter.INSERT,format_bytes(self.default_cache))
+        self.cache.insert(tkinter.INSERT,shared.format_bytes(self.default_cache))
         if self.default_cache == 0:
             self.cache.current(0)
         self.update_size()
@@ -205,7 +166,7 @@ class LoginWindow(Modal):
     def calc_size(self,index,size):
         sizes = [0,1,2,4,8,16,32,64,128,256]
         if index == -1:
-            return get_bytes(size)
+            return shared.get_bytes(size)
         else:
             return sizes[index] * 1024 ** 2
     def update_size(self,event=None):
@@ -214,7 +175,7 @@ class LoginWindow(Modal):
         if size > 512 * 1024 ** 2:
             self.cache_show.configure(fg="red")
             if not self.warning:
-                tkinter.messagebox.showwarning("缓存大小",f"您设置的缓存大小（{format_bytes(size)}）太大了，大于512 MB。这种情况下，若您打开了一个大文件，则有可能引发OOM（内存不足）。")
+                tkinter.messagebox.showwarning("缓存大小",f"您设置的缓存大小（{shared.format_bytes(size)}）太大了，大于512 MB。这种情况下，若您打开了一个大文件，则有可能引发OOM（内存不足）。")
                 self.warning = True
         else:
             self.cache_show.configure(fg="black")
@@ -246,7 +207,6 @@ def repair_file(file):
 
 def delete_file(archive,filename,button):
     delete = DeleteWindow(root,f"你即将删除：{archive} ({filename})\n此操作无法恢复。是否继续？")
-    print(delete.answer)
     if delete.answer:
         os.system(f"rm {archive}*")
         log(f"[+] Deleted: {archive}*")
@@ -449,7 +409,7 @@ def on_loaded(future):
                 menu = tkinter.Menu(btn,tearoff=0)
                 menu.add_command(label="修复",command=lambda: repair_file(archive))
                 menu.add_command(label="删除",command=lambda: delete_file(archive,filename,btn))
-                menu.add_command(label="文件信息",command=lambda: InfoWindow(root,f'路径：{pathlib.Path(archive).parent}\n加密：{pathlib.Path(archive).name}\n文件：{filename}\n标签：{" ".join(tags)}\n大小：{format_bytes(size)} ({size} Bytes)\n切片数量：{chunks}\n切片规格：{format_bytes(chunk_size)} ({chunk_size} Bytes)'))
+                menu.add_command(label="文件信息",command=lambda: InfoWindow(root,f'路径：{pathlib.Path(archive).parent}\n加密：{pathlib.Path(archive).name}\n文件：{filename}\n标签：{" ".join(tags)}\n大小：{shared.format_bytes(size)} ({size} Bytes)\n切片数量：{chunks}\n切片规格：{shared.format_bytes(chunk_size)} ({chunk_size} Bytes)'))
                 menu.post(event.x_root, event.y_root)
                 
             btn.image = tk_img
@@ -457,7 +417,6 @@ def on_loaded(future):
             btn.grid(row=row, column=col, padx=5, pady=5)
             preview_buttons.append(btn)
             load_indicator.configure(text=f"已加载：{len(preview_buttons)}/{total}")
-            print(len(archives),len(preview_buttons))
 
     safe_ui_update(add_button)
     
@@ -500,7 +459,6 @@ def load_archives():
     except:
         ARCHIVE_DIR = None
         log("[!] Failed to load config.json")
-    print(ARCHIVE_DIR)
     root.withdraw()
     dialog = LoginWindow(root,default_path=ARCHIVE_DIR,default_password=user_password,cache=cache)
     try:
@@ -518,7 +476,7 @@ def load_archives():
     except:
         log(f"[!] No such directory: \"{ARCHIVE_DIR}\"")
 
-    log(f"[+] Cache set to {format_bytes(cache)} ({cache} Bytes)")
+    log(f"[+] Cache set to {shared.format_bytes(cache)} ({cache} Bytes)")
     if cache > 512 * 1024 ** 2:
         log(f"[~] Cache too large, this may trigger OOM when opening large files.")
     log(f"[+] Working directory: {ARCHIVE_DIR}")

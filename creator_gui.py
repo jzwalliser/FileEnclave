@@ -1,6 +1,8 @@
 #!/usr/bin/python3
 import tkinter
 import tkinter.messagebox
+import tkinter.filedialog
+import dataclasses
 import hashlib
 import json
 import subprocess
@@ -9,24 +11,26 @@ import tkinterdnd2
 import ttkbootstrap
 import preview
 import PIL
+import PIL.Image
+import PIL.ImageTk
 import io
 import threading
+import shared
 
 #TODO：把chunk_size选择器美化掉
-#TODO：设置最小窗口大小
 
 class Tk(ttkbootstrap.Window,tkinterdnd2.TkinterDnD.Tk): #混合ttkbootstrap和tkinterdnd
     pass
 
 #=====加载与配置=====
 rec_percentage = 0 #恢复量（百分比）
-chunk_size = 2079152 #单个
+chunk_size = 2079152 #单个切片大小
 tags = [] #标签
 path = "./" #当前路径
 password = "" #密码
 file_path = None #被加载的文件
-tk_img = None #图片缓存
 edit_mode = False #标签修改模式
+column = 5 #每行标签数
 
 try:
     with open("config.json","rb") as conf:
@@ -104,7 +108,7 @@ def run_creator(): #创建加密压缩包
     tags_list = [t.strip() for t in tags_raw.split() if t.strip()]
     tags_json = ",".join(f'"{t}"' for t in tags_list)
 
-    cmd = ["python3","creator.py",file_path,f"{path}/{output_hash}.7z",user_password_var.get(),"-y","-m",f'{{"tags":[{tags_json}]}}',"-c",str(chunk_size)]
+    cmd = ["python3","creator.py",file_path,f"{path}/{output_hash}.7z",user_password_var.get(),"-y","-m",f'{{"tags":[{tags_json}]}}',"-c",str(calc_size(chunk_size_entry.current(),chunk_size_entry.get()))]
     
     if rec_percentage != 0:
         print("rec")
@@ -121,7 +125,7 @@ def edit():
     else:
         edit_mode = True
         edit_tags.configure(text="完成编辑（右键标签即可将其删除）",bootstyle=ttkbootstrap.constants.SUCCESS)
-        tag_append.grid(row=len(tag_buttons) // 3,column=len(tag_buttons) % 3,padx=5,pady=5,sticky=tkinter.W)
+        tag_append.grid(row=len(tag_buttons) // column,column=len(tag_buttons) % column,padx=5,pady=5,sticky=tkinter.W)
 
 def user_add(event):
     tag_name = tag_append.get()
@@ -133,7 +137,7 @@ def user_add(event):
                 root.after(1500,tag_highlighter)
                 return
         add_tag(i)
-        tag_append.grid(row=len(tag_buttons) // 3,column=len(tag_buttons) % 3,padx=5,pady=5,sticky=tkinter.W)
+        tag_append.grid(row=len(tag_buttons) // column,column=len(tag_buttons) % column,padx=5,pady=5,sticky=tkinter.W)
         tag_append.delete(0,tkinter.END)
         tag_highlighter()
 
@@ -147,8 +151,8 @@ def del_tag(event,tag):
             i.grid_forget()
             break
     for i in range(len(tag_buttons)):
-        tag_buttons[i].grid(row=i // 3,column=i % 3,padx=5,pady=5,sticky=tkinter.W)
-    tag_append.grid(row=len(tag_buttons) // 3,column=len(tag_buttons) % 3,padx=5,pady=5,sticky=tkinter.W)
+        tag_buttons[i].grid(row=i // column,column=i % column,padx=5,pady=5,sticky=tkinter.W)
+    tag_append.grid(row=len(tag_buttons) // column,column=len(tag_buttons) % column,padx=5,pady=5,sticky=tkinter.W)
 
 def insert_tag(tag):
     current = tags_var.get().strip()
@@ -166,7 +170,7 @@ def add_tag(tag):
     if tag == "":
         return
     tag_button = ttkbootstrap.Button(frame_buttons,text=tag,width=8,command=lambda t=tag: insert_tag(t))
-    tag_button.grid(row=len(tag_buttons) // 3,column=len(tag_buttons) % 3,padx=5,pady=5,sticky=tkinter.W)
+    tag_button.grid(row=len(tag_buttons) // column,column=len(tag_buttons) % column,padx=5,pady=5,sticky=tkinter.W)
     tag_button.bind("<Button-3>",lambda event,t=tag: del_tag(event,t))
     tag_buttons.append(tag_button)
 
@@ -177,60 +181,93 @@ def tag_highlighter(arg1=None,arg2=None,arg3=None):
             i.configure(bootstyle=ttkbootstrap.constants.SUCCESS)
         else:
             i.configure(bootstyle=ttkbootstrap.constants.PRIMARY)
+
+def choose_file(event):
+    file = tkinter.filedialog.askopenfilename()
+    @dataclasses.dataclass
+    class Event:
+        data = file
+    if file:
+        on_drop(Event())
+
+def calc_size(index,size):
+    sizes = [1,2,4,5,8,10,16,20,32]
+    if index == -1:
+        return shared.get_bytes(size)
+    else:
+        return sizes[index] * 1024 ** 2
+
+def update_size(event):
+    chunk_size_indicator.configure(text=str(calc_size(chunk_size_entry.current(),chunk_size_entry.get())) + " Bytes")
             
     
 #=====窗口与界面=====
 root = Tk()
 root.title("Creator GUI Tool")
-root.geometry("1180x960")
+root.geometry("1580x1000")
+root.wm_minsize(1580,1000)
+
 main_pane = tkinter.PanedWindow(root,orient=tkinter.HORIZONTAL)
 main_pane.pack(fill=tkinter.BOTH,expand=True,padx=10,pady=10)
 
 left_frame = tkinter.Frame(main_pane,padx=10,pady=10)
-main_pane.add(left_frame,minsize=620)
+main_pane.add(left_frame,minsize=720)
 
 right_frame = tkinter.Frame(main_pane,padx=10,pady=10)
-main_pane.add(right_frame,minsize=420)
+main_pane.add(right_frame,minsize=860)
 
-drop_frame = tkinter.LabelFrame(left_frame,text="拖拽文件到此处",width=400,height=150)
-drop_frame.pack(ipady=30,pady=(0,10),fill=tkinter.X)
+drop_frame = tkinter.LabelFrame(left_frame,text="拖拽文件到此处或选择文件",width=400,height=150,cursor="hand2")
+drop_frame.pack(ipady=30,fill=tkinter.X)
 drop_frame.pack_propagate(False)
-
-drop_label = tkinter.Label(drop_frame,text="📂 拖拽一个文件进来",fg="gray",wraplength=450)
+drop_label = tkinter.Label(drop_frame,text="📂 拖拽一个文件进来\n或点击选择文件",fg="gray",wraplength=500)
 drop_label.pack(expand=True)
+drop_label.bind("<Button-1>",choose_file)
 
-preview_pic = tkinter.Label(left_frame,text="预览图")
-preview_pic.pack(ipady=0,pady=(0,10),fill=tkinter.X)
+preview_frame = tkinter.LabelFrame(left_frame,text="预览图",width=400,height=150)
+preview_frame.pack(fill=tkinter.X)
+tk_img = PIL.ImageTk.PhotoImage(PIL.Image.new(mode="RGB",size=(480,270),color=(255,255,255)))
+preview_pic = tkinter.Label(preview_frame,image=tk_img)
+preview_pic.pack(ipady=20,fill=tkinter.X)
                            
 drop_frame.drop_target_register(tkinterdnd2.DND_FILES)
 drop_frame.dnd_bind("<<Drop>>",on_drop)
+drop_frame.bind("<Button-1>",choose_file)
 
 frame_pwd = tkinter.Frame(left_frame)
 frame_pwd.pack(fill=tkinter.X,pady=5)
-
 password_label = tkinter.Label(frame_pwd,text="密码：")
 password_label.pack(side=tkinter.LEFT)
 user_password_var = tkinter.StringVar(value=password)
 password_entry = tkinter.Entry(frame_pwd,textvariable=user_password_var,show="*",width=30)
-password_entry.pack(side=tkinter.LEFT,padx=5)
+password_entry.pack(side=tkinter.LEFT,fill=tkinter.X,expand=True)
 
 frame_rec = tkinter.Frame(left_frame)
 frame_rec.pack(fill=tkinter.X,pady=5)
-
-rec_label = tkinter.Label(frame_rec,text="恢复（0–100）：")
-rec_label.pack(side=tkinter.LEFT)
-rec_var = tkinter.IntVar(value=rec_percentage)
-rec_scale = tkinter.Scale(frame_rec,from_=0,to=100,orient=tkinter.HORIZONTAL,variable=rec_var)
-rec_scale.pack(side=tkinter.LEFT,fill=tkinter.X,expand=True)
+rec_size_label = tkinter.Label(frame_rec,text="恢复（0~100）：")
+rec_size_label.pack(side=tkinter.LEFT)
+rec_size_var = tkinter.IntVar(value=rec_percentage)
+rec_size_scale = ttkbootstrap.Spinbox(frame_rec,from_=1,to=100,textvariable=rec_size_var,width=15)
+rec_size_scale.pack(side=tkinter.LEFT,fill=tkinter.X,expand=True,ipadx=50)
 
 frame_chunk = tkinter.Frame(left_frame)
 frame_chunk.pack(fill=tkinter.X,pady=5)
-
 chunk_size_label = tkinter.Label(frame_chunk,text="切片大小：")
-chunk_size_label.pack(side=tkinter.LEFT)
-chunk_size_var = tkinter.IntVar(value=chunk_size)
-chunk_size_entry = tkinter.Spinbox(frame_chunk,from_=1,to=100000000,textvariable=chunk_size_var,width=15)
-chunk_size_entry.pack(side=tkinter.LEFT,padx=5)
+chunk_size_label.pack(side=tkinter.LEFT)       
+chunk_size_entry = tkinter.ttk.Combobox(frame_chunk,values=["1 MB","2 MB","4 MB","5 MB","8 MB","10 MB","16 MB","20 MB","32 MB"])
+chunk_size_entry.pack(side=tkinter.LEFT,fill=tkinter.X,expand=True)
+chunk_size_entry.insert(tkinter.INSERT,shared.format_bytes(chunk_size))
+chunk_size_entry.bind("<<ComboboxSelected>>",update_size)
+chunk_size_entry.bind("<KeyRelease>",update_size)
+chunk_size_indicator = tkinter.Label(frame_chunk,text=str(calc_size(chunk_size_entry.current(),chunk_size_entry.get())) + " Bytes")
+chunk_size_indicator.pack(side=tkinter.LEFT,padx=10)
+
+frame_output = tkinter.Frame(left_frame)
+frame_output.pack(fill=tkinter.X,pady=5)
+output_label = tkinter.Label(frame_output,text="输出文件夹：")
+output_label.pack(side=tkinter.LEFT)
+output_entry = tkinter.Entry(frame_output,width=15)
+output_entry.insert(tkinter.INSERT,path)
+output_entry.pack(side=tkinter.LEFT,fill=tkinter.X,expand=True)
 
 run = ttkbootstrap.Button(left_frame,text="🚀 执行 creator.py",command=run_creator)
 run.pack(fill=tkinter.X,pady=15,ipady=20)
@@ -252,7 +289,7 @@ tag_entry = tkinter.Entry(frame_tags,textvariable=tags_var,width=30)
 tag_entry.pack(fill=tkinter.X,pady=(5,10))
 
 frame_buttons = tkinter.Frame(right_container)
-frame_buttons.pack(fill=tkinter.BOTH,expand=True,padx=10,pady=(0,10))
+frame_buttons.pack(fill=tkinter.BOTH,expand=True,padx=10)
 tag_buttons = []
 
 tag_append = tkinter.Entry(frame_buttons,width=9)
