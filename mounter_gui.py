@@ -216,6 +216,18 @@ class LoginWindow(Modal):
         else:
             self.cache_show.configure(fg="black")
 
+class AboutWindow(Modal):
+    def __init__(self,master):
+        super().__init__(master,title="关于文件加密")
+    def body(self,master):
+        main = tkinter.Label(master,text="关于文件加密",font=(None,20))
+        main.pack()
+        ver = tkinter.Label(master,text=f"版本：{shared.build_version} {shared.current_build}")
+        ver.pack()
+        release = ttkbootstrap.Label(master,text=f"\n{shared.builds[shared.current_build]}",anchor="center",bootstyle=(release_colors[shared.current_build]))
+        release.pack(fill=tkinter.X)
+        
+
 def log(message): 
     global logs
     if message:
@@ -494,8 +506,8 @@ umount_button.grid(row=0,column=2,padx=10)
 repair_everything = ttkbootstrap.Button(top_banner,text="检查修复所有文件",command=repair_all)
 repair_everything.grid(row=0,column=3,padx=10)
 
-about = ttkbootstrap.Button(top_banner,text="关于",command=repair_all)
-repair_everything.grid(row=0,column=4,padx=10)
+about = ttkbootstrap.Button(top_banner,text="关于",command=lambda: AboutWindow(root))
+about.grid(row=0,column=4,padx=10)
 
 preview_frame = tkinter.Frame()
 preview_frame.pack(fill=tkinter.BOTH,expand=True)
