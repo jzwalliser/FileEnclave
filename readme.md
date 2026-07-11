@@ -3,6 +3,11 @@
 
 # 安装及使用
 在目标Linux机上安装python以及相关依赖，然后下载源代码即可运行。
+已经在Ubuntu上测试过了，需要安装以下依赖：
+```bash
+apt install python3-tk 7zip poppler-utils python3-gi-cairo libpango1.0-dev libcairo2-dev fuse libfuse-dev
+pip install pyperclip pycairo pdf2image opencv-python fusepy argon2-cffi tkinterdnd2 ttkbootstrap pillow
+```
 
 # 界面
 GUI部分的界面是`tkinter`写的，用了`ttkbootstrap`进行美化。
