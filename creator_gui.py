@@ -18,6 +18,11 @@ import threading
 import shared
 import sys
 import argparse
+import gettext
+
+gettext.bindtextdomain("creator_gui","./locale")
+gettext.textdomain("creator_gui")
+_ = gettext.gettext
 
 class Tk(ttkbootstrap.Window,tkinterdnd2.TkinterDnD.Tk): #混合ttkbootstrap和tkinterdnd
     pass
@@ -73,24 +78,24 @@ def on_finish(err): #运行命令结束调用
     run.configure(state=tkinter.NORMAL)
     if err:
         run.configure(bootstyle=ttkbootstrap.constants.DANGER)
-        tkinter.messagebox.showerror("执行失败",str(e))
+        tkinter.messagebox.showerror(_("Failed"),str(e))
         root.after(3000,lambda: run.configure(bootstyle=ttkbootstrap.constants.PRIMARY))
     else:
         run.configure(bootstyle=ttkbootstrap.constants.SUCCESS)
-        tkinter.messagebox.showinfo("成功","文件加密完成")
+        tkinter.messagebox.showinfo(_("Success"),_("File encrypted."))
         root.after(1000,lambda: run.configure(bootstyle=ttkbootstrap.constants.PRIMARY))
 
 def run_creator(): #创建加密压缩包
     global file_path
     if not file_path or not os.path.exists(file_path):
         run.configure(bootstyle=ttkbootstrap.constants.WARNING)
-        tkinter.messagebox.showwarning("缺少文件","请先拖拽一个文件")
+        tkinter.messagebox.showwarning(_("File"),_("Please add a file."))
         root.after(1000,lambda: run.configure(bootstyle=ttkbootstrap.constants.PRIMARY))
         return
 
     if not user_password_var.get():
         run.configure(bootstyle=ttkbootstrap.constants.WARNING)
-        tkinter.messagebox.showwarning("缺少密码","请输入密码")
+        tkinter.messagebox.showwarning(_("Password"),_("Please set a password."))
         root.after(1000,lambda: run.configure(bootstyle=ttkbootstrap.constants.PRIMARY))
         return
 
@@ -98,7 +103,7 @@ def run_creator(): #创建加密压缩包
         output_hash = sha1_md5(file_path)
     except Exception as e:
         run.configure(bootstyle=ttkbootstrap.constants.DANGER)
-        tkinter.messagebox.showerror("Hash 错误",str(e))
+        tkinter.messagebox.showerror(_("Hash error"),str(e))
         root.after(3000,lambda: run.configure(bootstyle=ttkbootstrap.constants.PRIMARY))
         return
 
@@ -118,11 +123,11 @@ def edit():
     global edit_mode
     if edit_mode:
         edit_mode = False
-        edit_tags.configure(text="编辑标签",bootstyle=ttkbootstrap.constants.PRIMARY)
+        edit_tags.configure(text=_("Edit tags"),bootstyle=ttkbootstrap.constants.PRIMARY)
         tag_append.grid_forget()
     else:
         edit_mode = True
-        edit_tags.configure(text="完成编辑（右键标签即可将其删除）",bootstyle=ttkbootstrap.constants.SUCCESS)
+        edit_tags.configure(text=_("Finish (Right click to delete tag)"),bootstyle=ttkbootstrap.constants.SUCCESS)
         tag_append.grid(row=len(tag_buttons) // column,column=len(tag_buttons) % column,padx=5,pady=5,sticky=tkinter.W)
 
 def user_add(event):
@@ -204,33 +209,30 @@ def update_size(event):
     chunk_size_indicator.configure(text=str(calc_size(chunk_size_entry.current(),chunk_size_entry.get())) + " Bytes")
 
 root = Tk()
-root.title("文件加密工具")
-root.geometry("1580x1000")
-root.wm_minsize(1580,1000)
+root.title("FileEnclave")
 
 if shared.current_build == "Alpha" or shared.current_build == "Beta":
     release_colors = {"Alpha":ttkbootstrap.constants.DANGER,"Beta":ttkbootstrap.constants.WARNING,"Stable":ttkbootstrap.constants.SUCCESS}
     release = ttkbootstrap.Label(root,text=f"{shared.current_build}: {shared.builds[shared.current_build]}",anchor="center",bootstyle=(ttkbootstrap.constants.INVERSE,release_colors[shared.current_build]))
     release.pack(fill=tkinter.X)
-    release_tip = ttkbootstrap.widgets.tooltip.ToolTip(release,text="Alpha：内测版，有许多bug\nBeta：公测版，有一些bug\nStable：稳定版，应该没bug啦",delay=0)
-
+    
 main_pane = tkinter.PanedWindow(root,orient=tkinter.HORIZONTAL)
 main_pane.pack(fill=tkinter.BOTH,expand=True,padx=10,pady=10)
 
 left_frame = tkinter.Frame(main_pane,padx=10,pady=10)
-main_pane.add(left_frame,minsize=720)
+main_pane.add(left_frame)
 
 right_frame = tkinter.Frame(main_pane,padx=10,pady=10)
-main_pane.add(right_frame,minsize=860)
+main_pane.add(right_frame)
 
-drop_frame = tkinter.LabelFrame(left_frame,text="拖拽文件到此处或选择文件",width=400,height=150,cursor="hand2")
+drop_frame = tkinter.LabelFrame(left_frame,text=_("DND a file or choose one"),width=400,height=150,cursor="hand2")
 drop_frame.pack(ipady=30,fill=tkinter.X)
 drop_frame.pack_propagate(False)
-drop_label = tkinter.Label(drop_frame,text="拖拽一个文件进来\n或点击选择文件",fg="gray",wraplength=500)
+drop_label = tkinter.Label(drop_frame,text=_("Drag and drop a file\nor click and choose one"),fg="gray",wraplength=500)
 drop_label.pack(expand=True)
 drop_label.bind("<Button-1>",choose_file)
 
-preview_frame = tkinter.LabelFrame(left_frame,text="预览图",width=400,height=150)
+preview_frame = tkinter.LabelFrame(left_frame,text=_("Preview"),width=400,height=150)
 preview_frame.pack(fill=tkinter.X)
 tk_img = PIL.ImageTk.PhotoImage(PIL.Image.new(mode="RGB",size=(480,270),color=(255,255,255)))
 preview_pic = tkinter.Label(preview_frame,image=tk_img)
@@ -242,29 +244,29 @@ drop_frame.bind("<Button-1>",choose_file)
 
 frame_pwd = tkinter.Frame(left_frame)
 frame_pwd.pack(fill=tkinter.X,pady=5)
-password_label = tkinter.Label(frame_pwd,text="密码：")
+password_label = tkinter.Label(frame_pwd,text=_("Password: "))
 password_label.pack(side=tkinter.LEFT)
 user_password_var = tkinter.StringVar(value=password)
 password_entry = tkinter.Entry(frame_pwd,textvariable=user_password_var,show="●",width=30)
 password_entry.pack(side=tkinter.LEFT,fill=tkinter.X,expand=True)
-password_reveal_button = tkinter.Button(frame_pwd,text="显示")
+password_reveal_button = tkinter.Button(frame_pwd,text="👁")
 password_reveal_button.pack(side=tkinter.LEFT)
 password_reveal_button.bind("<ButtonPress-1>",lambda event: password_entry.configure(show=""))
 password_reveal_button.bind("<ButtonRelease-1>",lambda event: password_entry.configure(show="●"))
 
 frame_rec = tkinter.Frame(left_frame)
 frame_rec.pack(fill=tkinter.X,pady=5)
-rec_size_label = tkinter.Label(frame_rec,text="恢复（0~100）%：")
+rec_size_label = tkinter.Label(frame_rec,text=_("Recovery (0~100)%: "))
 rec_size_label.pack(side=tkinter.LEFT)
-rec_size_tip = ttkbootstrap.widgets.tooltip.ToolTip(rec_size_label,text="当加密压缩包因某些原因（例如U盘存储不当）发生损坏时，可以进行恢复。\n例如，当恢复量设置为15%时，只要加密压缩包损坏量<15%，就可修复。\n这会消耗一定量存储空间，恢复大小≈加密压缩包×恢复量。",delay=0)
+rec_size_tip = ttkbootstrap.widgets.tooltip.ToolTip(rec_size_label,text=_("If an encrypted ZIP file gets damaged (e.g., from faulty USB storage), it can be fixed. For instance, at a 15% recovery level, any damage under 15% is repairable. Note that this uses extra disk space—roughly the archive size times the recovery rate."),delay=0)
 rec_size_var = tkinter.IntVar(value=rec_percentage)
 rec_size_scale = ttkbootstrap.Spinbox(frame_rec,from_=1,to=100,textvariable=rec_size_var,width=15)
 rec_size_scale.pack(side=tkinter.LEFT,fill=tkinter.X,expand=True,ipadx=50)
 
 frame_chunk = tkinter.Frame(left_frame)
 frame_chunk.pack(fill=tkinter.X,pady=5)
-chunk_size_label = tkinter.Label(frame_chunk,text="切片大小：")
-chunk_size_tip = ttkbootstrap.widgets.tooltip.ToolTip(chunk_size_label,text="文件在加密压缩过程中，会被切片，然后再加密，以提高性能。例如，文件大小为51MB，切片大小为10MB，那么文件会被切分为6片（5×10 MB+1×1 MB=51 MB）。",delay=0)
+chunk_size_label = tkinter.Label(frame_chunk,text=_("Chunk size: "))
+chunk_size_tip = ttkbootstrap.widgets.tooltip.ToolTip(chunk_size_label,text=_("Files are split into chunks before encryption to boost performance. For example, a 51 MB file with a 10 MB chunk size will be divided into 6 pieces (5 × 10 MB + 1 × 1 MB = 51 MB)."),delay=0)
 chunk_size_label.pack(side=tkinter.LEFT)       
 chunk_size_entry = tkinter.ttk.Combobox(frame_chunk,values=["1 MB","2 MB","4 MB","5 MB","8 MB","10 MB","16 MB","20 MB","32 MB"])
 chunk_size_entry.pack(side=tkinter.LEFT,fill=tkinter.X,expand=True)
@@ -276,32 +278,32 @@ chunk_size_indicator.pack(side=tkinter.LEFT,padx=10)
 
 frame_output = tkinter.Frame(left_frame)
 frame_output.pack(fill=tkinter.X,pady=5)
-output_label = tkinter.Label(frame_output,text="输出文件夹：")
+output_label = tkinter.Label(frame_output,text=_("Output folder: "))
 output_label.pack(side=tkinter.LEFT)
 output_entry = tkinter.Entry(frame_output,width=15)
 output_entry.insert(tkinter.INSERT,path)
 output_entry.pack(side=tkinter.LEFT,fill=tkinter.X,expand=True)
 
-run = ttkbootstrap.Button(left_frame,text="开始加密",command=run_creator)
+run = ttkbootstrap.Button(left_frame,text=_("Start encryption: "),command=run_creator)
 run.pack(fill=tkinter.X,pady=15,ipady=20)
 
-right_container = tkinter.LabelFrame(right_frame,text="标签设置")
+right_container = tkinter.LabelFrame(right_frame,text=_("Tag settings"))
 right_container.pack(fill=tkinter.BOTH,expand=True)
 
 frame_tags = tkinter.Frame(right_container)
 frame_tags.pack(fill=tkinter.X,padx=10,pady=10)
 
-edit_tags = ttkbootstrap.Button(frame_tags,text="编辑标签",command=edit)
+edit_tags = ttkbootstrap.Button(frame_tags,text=_("Edit tags"),command=edit)
 edit_tags.pack(fill=tkinter.X)
 
-tags_label = tkinter.Label(frame_tags,text="标签（空格分隔）：")
+tags_label = tkinter.Label(frame_tags,text=_("Tags: (Use space to seperate)"))
 tags_label.pack(anchor=tkinter.W)
 tags_var = tkinter.StringVar()
 tags_var.trace_add("write",tag_highlighter)
 tag_entry = tkinter.Entry(frame_tags,textvariable=tags_var,width=30)
 tag_entry.pack(fill=tkinter.X,pady=(5,10))
 tag_entry.pack_propagate(False)
-tag_reset = tkinter.Button(tag_entry,text="x",command=lambda: tags_var.set(value=""),cursor="arrow")
+tag_reset = ttkbootstrap.Button(tag_entry,text="×",command=lambda: tags_var.set(value=""),cursor="arrow",bootstyle=ttkbootstrap.constants.LINK)
 tag_reset.pack(side=tkinter.RIGHT)
 
 frame_buttons = tkinter.Frame(right_container)

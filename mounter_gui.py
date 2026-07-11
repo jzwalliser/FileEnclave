@@ -156,7 +156,7 @@ class LoginWindow(Modal):
         self.default_password = default_password
         self.warning = False
         self.default_cache = cache
-        super().__init__(master,title=_("Login"),customize_button=True,transient=False,geometry="1800x350")
+        super().__init__(master,title=_("Login"),customize_button=True,transient=False)
     def choose_file(self):
         folder = tkinter.filedialog.askdirectory()
         self.dir.delete(0,tkinter.END)
@@ -534,7 +534,6 @@ def on_drop(event):
 
 root = Tk()
 root.title("FileEnclave")
-root.geometry("2200x1200")
 root.withdraw()
 
 if shared.current_build == "Alpha" or shared.current_build == "Beta":
@@ -574,9 +573,9 @@ about = ttkbootstrap.Button(top_banner,text=_("About"),command=lambda: AboutWind
 about.grid(row=0,column=5,padx=10)
 
 preview_frame = tkinter.Frame()
-preview_frame.pack(fill=tkinter.BOTH,expand=True)
+preview_frame.pack(fill=tkinter.BOTH,expand=True,ipady=350)
 canvas = tkinter.Canvas(preview_frame)
-scrollbar = tkinter.ttk.Scrollbar(preview_frame,orient="vertical",command=canvas.yview)
+scrollbar = tkinter.ttk.Scrollbar(preview_frame,orient=tkinter.VERTICAL,command=canvas.yview)
 frame = tkinter.ttk.Frame(canvas)
 frame.bind("<Configure>",lambda e: canvas.configure(scrollregion=canvas.bbox(tkinter.ALL)))
 canvas.create_window((0,0),window=frame,anchor=tkinter.NW)

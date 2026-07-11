@@ -1,0 +1,107 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2026-07-11 21:24+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+
+
+#: creator_gui.py:81
+msgid "Failed"
+msgstr "失败"
+
+#: creator_gui.py:85
+msgid "File encrypted."
+msgstr "文件加密完成"
+
+#: creator_gui.py:85
+msgid "Success"
+msgstr "成功"
+
+#: creator_gui.py:92
+msgid "File"
+msgstr "文件"
+
+#: creator_gui.py:92
+msgid "Please add a file."
+msgstr "请添加一个文件。"
+
+#: creator_gui.py:98
+msgid "Password"
+msgstr "密码"
+
+#: creator_gui.py:98
+msgid "Please set a password."
+msgstr "请设置一个密码。"
+
+#: creator_gui.py:106
+msgid "Hash error"
+msgstr "哈希错误"
+
+#: creator_gui.py:126 creator_gui.py:296
+msgid "Edit tags"
+msgstr "编辑标签"
+
+#: creator_gui.py:130
+msgid "Finish (Right click to delete tag)"
+msgstr "完成编辑（右键标签即可将其删除）"
+
+#: creator_gui.py:228
+msgid "DND a file or choose one"
+msgstr "拖拽文件到此处或选择文件"
+
+#: creator_gui.py:231
+msgid ""
+"Drag and drop a file\n"
+"or click and choose one"
+msgstr "拖拽一个文件进来\n或点击选择文件"
+
+#: creator_gui.py:235
+msgid "Preview"
+msgstr "预览"
+
+#: creator_gui.py:247
+msgid "Password: "
+msgstr "密码："
+
+#: creator_gui.py:259
+msgid "Recovery (0~100)%: "
+msgstr "恢复（0~100）%："
+
+#: creator_gui.py:261
+msgid "If an encrypted ZIP file gets damaged (e.g., from faulty USB storage), it can be fixed. For instance, at a 15% recovery level, any damage under 15% is repairable. Note that this uses extra disk space—roughly the archive size times the recovery rate."
+msgstr "当加密压缩包因某些原因（例如U盘存储不当）发生损坏时，可以进行恢复。\n例如，当恢复量设置为15%时，只要加密压缩包损坏量<15%，就可修复。\n这会消耗一定量存储空间，恢复大小≈加密压缩包×恢复量。"
+
+#: creator_gui.py:268
+msgid "Chunk size: "
+msgstr "切片大小："
+
+#: creator_gui.py:269
+msgid "Files are split into chunks before encryption to boost performance. For example, a 51 MB file with a 10 MB chunk size will be divided into 6 pieces (5 × 10 MB + 1 × 1 MB = 51 MB)."
+msgstr "文件在加密压缩过程中，会被切片，然后再加密，以提高性能。例如，文件大小为51MB，切片大小为10MB，那么文件会被切分为6片（5×10 MB+1×1 MB=51 MB）。"
+
+#: creator_gui.py:281
+msgid "Output folder: "
+msgstr "输出文件夹："
+
+#: creator_gui.py:287
+msgid "Start encryption: "
+msgstr "开始加密"
+
+#: creator_gui.py:290
+msgid "Tag settings"
+msgstr "标签设置"
+
+#: creator_gui.py:299
+msgid "Tags: (Use space to seperate)"
+msgstr "标签（空格分隔）："
+
