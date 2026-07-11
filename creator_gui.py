@@ -210,6 +210,7 @@ if shared.current_build == "Alpha" or shared.current_build == "Beta":
     release_colors = {"Alpha":ttkbootstrap.constants.DANGER,"Beta":ttkbootstrap.constants.WARNING,"Stable":ttkbootstrap.constants.SUCCESS}
     release = ttkbootstrap.Label(root,text=f"{shared.current_build}: {shared.builds[shared.current_build]}",anchor="center",bootstyle=(ttkbootstrap.constants.INVERSE,release_colors[shared.current_build]))
     release.pack(fill=tkinter.X)
+    release_tip = ttkbootstrap.widgets.tooltip.ToolTip(release,text="Alpha：内测版，有许多bug\nBeta：公测版，有一些bug\nStable：稳定版，应该没bug啦",delay=0)
 
 main_pane = tkinter.PanedWindow(root,orient=tkinter.HORIZONTAL)
 main_pane.pack(fill=tkinter.BOTH,expand=True,padx=10,pady=10)

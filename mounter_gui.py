@@ -11,6 +11,7 @@ import time
 import sys
 import traceback
 import re
+import webbrowser
 
 import tkinter
 import tkinter.ttk
@@ -62,11 +63,14 @@ class Modal(): #自定义对话框
         frame = tkinter.Frame(self.top)
         frame.pack(fill=tkinter.BOTH,expand=True)
         focus = self.body(frame)
-        if focus:
-            focus.focus_set()
         if not customize_button:
             ok_btn = tkinter.Button(self.top,text="确定",command=self.top.destroy)
+            ok_btn.bind("<Return>",lambda event: self.top.destroy())
             ok_btn.pack(pady=20)
+        if focus:
+            focus.focus_set()
+        else:
+            ok_btn.focus_set()
         
         root.wait_window(self.top)
     def body(self,master):
@@ -141,6 +145,8 @@ class LoginWindow(Modal):
         if shared.current_build == "Alpha" or shared.current_build == "Beta":
             release = ttkbootstrap.Label(master,text=f"{shared.current_build}: {shared.builds[shared.current_build]}",anchor="center",bootstyle=(ttkbootstrap.constants.INVERSE,release_colors[shared.current_build]))
             release.pack(fill=tkinter.X)
+            release_tip = ttkbootstrap.widgets.tooltip.ToolTip(release,text="Alpha：内测版，有许多bug\nBeta：公测版，有一些bug\nStable：稳定版，应该没bug啦",delay=0)
+
         path_frame = tkinter.Frame(master)
         path_frame.pack(fill=tkinter.X)
         path_label = tkinter.Label(path_frame,text="路径：")
@@ -171,6 +177,7 @@ class LoginWindow(Modal):
         cache_frame.pack(fill=tkinter.X)
         cache_label = tkinter.Label(cache_frame,text="缓存：")
         cache_label.pack(side=tkinter.LEFT)
+        cache_tip = ttkbootstrap.widgets.tooltip.ToolTip(cache_label,text="缓存，用于临时存储文件切片，以提高加载速度。推荐16 MB，建议不超过512 MB。",delay=0)
         self.cache = tkinter.ttk.Combobox(cache_frame,values=["不启用","1 MB","2 MB","4 MB","8 MB","16 MB","32 MB","64 MB","128 MB","256 MB"])
         self.cache.pack(side=tkinter.LEFT,fill=tkinter.X,expand=True)
         self.cache_show = tkinter.Label(cache_frame)
@@ -178,14 +185,15 @@ class LoginWindow(Modal):
         self.cache.bind("<<ComboboxSelected>>",self.update_size)
         self.cache.bind("<KeyRelease>",self.update_size)
         self.cache.insert(tkinter.INSERT,shared.format_bytes(self.default_cache))
+        
         if self.default_cache == 0:
             self.cache.current(0)
         self.update_size()
 
-        self.info_show_password_var = tkinter.IntVar()
+        self.info_show_password_var = tkinter.IntVar(value=0)
         info_show_passwords = ttkbootstrap.Checkbutton(master,text="展示盐和密码（仅调试用）",variable=self.info_show_password_var)
         info_show_passwords.pack(anchor=tkinter.W,padx=10)
-        self.info_show_password_var.set(value=0)
+        info_show_tip = ttkbootstrap.widgets.tooltip.ToolTip(info_show_passwords,text="若选中，右键显示文件信息的时候会把盐、一级密码和二级密码全都展示出来。一般来说，这个功能仅用于调试。",delay=0)
 
         buttons_frame = tkinter.Frame(master)
         buttons_frame.pack()
@@ -211,7 +219,7 @@ class LoginWindow(Modal):
         if size > 512 * 1024 ** 2:
             self.cache_show.configure(fg="red")
             if not self.warning:
-                tkinter.messagebox.showwarning("缓存大小",f"您设置的缓存大小（{shared.format_bytes(size)}）太大了，大于512 MB。这种情况下，若您打开了一个大文件，则有可能引发OOM（内存不足）。")
+                tkinter.messagebox.showwarning("缓存大小",f"您设置的缓存太大了（{shared.format_bytes(size)}），大于512 MB。这种情况下，打开一个大文件就有可能引发OOM（内存不足）。")
                 self.warning = True
         else:
             self.cache_show.configure(fg="black")
@@ -220,12 +228,35 @@ class AboutWindow(Modal):
     def __init__(self,master):
         super().__init__(master,title="关于文件加密")
     def body(self,master):
-        main = tkinter.Label(master,text="关于文件加密",font=(None,20))
+        main = tkinter.Label(master,text="文件加密",font=(None,30))
         main.pack()
         ver = tkinter.Label(master,text=f"版本：{shared.build_version} {shared.current_build}")
         ver.pack()
-        release = ttkbootstrap.Label(master,text=f"\n{shared.builds[shared.current_build]}",anchor="center",bootstyle=(release_colors[shared.current_build]))
+        release = ttkbootstrap.Label(master,text=f"{shared.builds[shared.current_build]}",anchor="center",bootstyle=(release_colors[shared.current_build]))
         release.pack(fill=tkinter.X)
+        slogan = tkinter.Label(master,text="愿你的数字资产在此得到庇护",font=(None,10,"italic"),justify=tkinter.LEFT)
+        slogan.pack()
+        about_frame = tkinter.ttk.LabelFrame(master,text="关于")
+        about_frame.pack(padx=10)
+        desc_para1 = tkinter.Label(about_frame,text="简介",font=(None,20),justify=tkinter.LEFT)
+        desc_para1.pack(anchor=tkinter.W)
+        desc_para2 = tkinter.Label(about_frame,text="这是一款面向 Linux 平台的安全文件加密工具，主要用于保护各类文件的数据安全。",justify=tkinter.LEFT)
+        desc_para2.pack(anchor=tkinter.W)
+        desc_para3 = tkinter.Label(about_frame,text="特性",font=(None,20),justify=tkinter.LEFT)
+        desc_para3.pack(anchor=tkinter.W)
+        desc_para4 = tkinter.Label(about_frame,text="安全可靠：采用安全性极高的 Argon2id 算法派生密钥，配合成熟的 7z 加密容器，有效抵御暴力破解与明文攻击。\n高效灵活：内部采用随机密钥加密文件，修改用户密码无需重新加密数据；支持切片存储与按需加载，可流畅处理大文件而不占用过多内存。\n隐私优先：解密时通过 FUSE 技术将文件挂载为虚拟文件系统，数据全程存在于内存中，卸载或意外断电后文件即刻消失，避免磁盘残留风险。\n容错性强：支持生成恢复数据（PAR），可在一定程度上修复因存储介质损坏导致的文件错误。\n友好易用：除了功能完备的命令行工具外，还提供了基于 Tkinter (ttkbootstrap) 开发的图形化界面，操作直观便捷。",justify=tkinter.LEFT)
+        desc_para4.pack(anchor=tkinter.W)
+        desc_para5 = tkinter.Label(about_frame,text="网站",font=(None,20),justify=tkinter.LEFT)
+        desc_para5.pack(anchor=tkinter.W)
+        desc_para6 = ttkbootstrap.Label(about_frame,text="Github：https://github.com/jzwalliser/FileEnclave",justify=tkinter.LEFT,foreground="#2222FF",cursor="hand2")
+        desc_para6.pack(anchor=tkinter.W)
+        desc_para6.bind("<ButtonRelease-1>",lambda event: webbrowser.open("https://github.com/jzwalliser/FileEnclave"))
+        desc_para6.bind("<Enter>",lambda event: desc_para6.configure(foreground="#6666FF"))
+        desc_para6.bind("<Leave>",lambda event: desc_para6.configure(foreground="#2222FF"))
+        desc_para7 = tkinter.Label(about_frame,text="致谢",font=(None,20),justify=tkinter.LEFT)
+        desc_para7.pack(anchor=tkinter.W)
+        desc_para8 = tkinter.Label(about_frame,text="感谢元宝​在本项目中提供了代码，以及 Icons8​ 提供了精美图标，还有许许多多其它开源库的作者们。",justify=tkinter.LEFT)
+        desc_para8.pack(anchor=tkinter.W)
         
 
 def log(message): 
@@ -285,9 +316,14 @@ def delete_file(archive,filename,button):
 def search_file(event=None):
     idx = 0
     search_results = 0
+    search_strs = search_entry.get().split()
+
     for i in preview_buttons:
+        add = True
         i.grid_forget()
-        if search_entry.get() in i["text"]:
+        for j in search_strs:
+            add = add and j in i["text"]
+        if add:
             row = idx // columns
             col = idx % columns
             idx += 1
@@ -480,6 +516,7 @@ root.withdraw()
 if shared.current_build == "Alpha" or shared.current_build == "Beta":
     release = ttkbootstrap.Label(root,text=f"{shared.current_build}: {shared.builds[shared.current_build]}",anchor="center",bootstyle=(ttkbootstrap.constants.INVERSE,release_colors[shared.current_build]))
     release.pack(fill=tkinter.X)
+    release_tip = ttkbootstrap.widgets.tooltip.ToolTip(release,text="Alpha：内测版，有许多bug\nBeta：公测版，有一些bug\nStable：稳定版，应该没bug啦",delay=0)
 
 top_banner = tkinter.ttk.Frame(root)
 top_banner.pack(fill=tkinter.X)
@@ -490,21 +527,22 @@ search_frame.grid(row=0,column=0,padx=20)
 search_entry = tkinter.Entry(search_frame)
 search_entry.grid(row=0,column=0,padx=10,pady=10,ipadx=520)
 search_entry.pack_propagate(False)
-search_entry.bind("<Return>",search_file)
+search_entry.bind("<KeyRelease>",search_file)
 
-search_button = tkinter.Button(search_frame,text="搜索",command=search_file)
-search_button.grid(row=0,column=1,padx=10)
 search_reset = tkinter.Button(search_entry,text="x",command=reset_search,cursor="arrow")
 search_reset.pack(side=tkinter.RIGHT)
 
 log_button = ttkbootstrap.Button(top_banner,text="Logs",command=lambda: LogWindow(root,logs))
 log_button.grid(row=0,column=1,padx=10)
+log_tip = ttkbootstrap.widgets.tooltip.ToolTip(log_button,text="日志，显示软件在运行中的一些调试信息。",delay=0)
 
 umount_button = tkinter.ttk.Button(top_banner,text="卸载卷",command=on_umount)
 umount_button.grid(row=0,column=2,padx=10)
+umount_tip = ttkbootstrap.widgets.tooltip.ToolTip(umount_button,text="卸载当前挂载的FUSE文件系统。点击之后，您可以打开其它加密的文件。若出现“文件打不开”之类的问题，点基本按钮也可能修复。",delay=0)
 
 repair_everything = ttkbootstrap.Button(top_banner,text="检查修复所有文件",command=repair_all)
 repair_everything.grid(row=0,column=3,padx=10)
+repair_tip = ttkbootstrap.widgets.tooltip.ToolTip(repair_everything,text="会检查该路径内的文件是否损坏，并尝试修复它们。",delay=0)
 
 about = ttkbootstrap.Button(top_banner,text="关于",command=lambda: AboutWindow(root))
 about.grid(row=0,column=4,padx=10)
