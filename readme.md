@@ -1,3 +1,5 @@
+English | [中文](readme_zh.md)
+
 # Introduction
 This is a file encryption tool capable of encrypting files of all types. It has a notable Vibe-coding flavor—30% of the code was written by Yuanbao (many thanks to Yuanbao for that), while the remaining 70% is my own work. Nearly all testing and bug fixes were also handled by me.
 
