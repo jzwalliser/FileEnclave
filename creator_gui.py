@@ -202,9 +202,14 @@ def update_size(event):
     chunk_size_indicator.configure(text=str(calc_size(chunk_size_entry.current(),chunk_size_entry.get())) + " Bytes")
 
 root = Tk()
-root.title("Creator GUI Tool")
+root.title("文件加密工具")
 root.geometry("1580x1000")
 root.wm_minsize(1580,1000)
+
+if shared.current_build == "Alpha" or shared.current_build == "Beta":
+    release_colors = {"Alpha":ttkbootstrap.constants.DANGER,"Beta":ttkbootstrap.constants.WARNING,"Stable":ttkbootstrap.constants.SUCCESS}
+    release = ttkbootstrap.Label(root,text=f"{shared.current_build}: {shared.builds[shared.current_build]}",anchor="center",bootstyle=(ttkbootstrap.constants.INVERSE,release_colors[shared.current_build]))
+    release.pack(fill=tkinter.X)
 
 main_pane = tkinter.PanedWindow(root,orient=tkinter.HORIZONTAL)
 main_pane.pack(fill=tkinter.BOTH,expand=True,padx=10,pady=10)
@@ -246,8 +251,9 @@ password_reveal_button.bind("<ButtonRelease-1>",lambda event: password_entry.con
 
 frame_rec = tkinter.Frame(left_frame)
 frame_rec.pack(fill=tkinter.X,pady=5)
-rec_size_label = tkinter.Label(frame_rec,text="恢复（0~100）：")
+rec_size_label = tkinter.Label(frame_rec,text="恢复（0~100）%：")
 rec_size_label.pack(side=tkinter.LEFT)
+rec_size_tip = ttkbootstrap.widgets.tooltip.ToolTip(rec_size_label,text="当加密压缩包因某些原因（例如U盘存储不当）发生损坏时，可以进行恢复。\n例如，当恢复量设置为15%时，只要加密压缩包损坏量<15%，就可修复。\n这会消耗一定量存储空间，恢复大小≈加密压缩包×恢复量。",delay=0)
 rec_size_var = tkinter.IntVar(value=rec_percentage)
 rec_size_scale = ttkbootstrap.Spinbox(frame_rec,from_=1,to=100,textvariable=rec_size_var,width=15)
 rec_size_scale.pack(side=tkinter.LEFT,fill=tkinter.X,expand=True,ipadx=50)
@@ -255,6 +261,7 @@ rec_size_scale.pack(side=tkinter.LEFT,fill=tkinter.X,expand=True,ipadx=50)
 frame_chunk = tkinter.Frame(left_frame)
 frame_chunk.pack(fill=tkinter.X,pady=5)
 chunk_size_label = tkinter.Label(frame_chunk,text="切片大小：")
+chunk_size_tip = ttkbootstrap.widgets.tooltip.ToolTip(chunk_size_label,text="文件在加密压缩过程中，会被切片，然后再加密，以提高性能。例如，文件大小为51MB，切片大小为10MB，那么文件会被切分为6片（5×10 MB+1×1 MB=51 MB）。",delay=0)
 chunk_size_label.pack(side=tkinter.LEFT)       
 chunk_size_entry = tkinter.ttk.Combobox(frame_chunk,values=["1 MB","2 MB","4 MB","5 MB","8 MB","10 MB","16 MB","20 MB","32 MB"])
 chunk_size_entry.pack(side=tkinter.LEFT,fill=tkinter.X,expand=True)

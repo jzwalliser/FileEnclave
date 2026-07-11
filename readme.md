@@ -107,7 +107,8 @@ GUI部分的界面是tkinter写的，用了ttkbootstrap进行美化。
 
 
 # 待办
-Refactor preview.py  
+mounter支持dnd
+mounter支持文件信息修改
 用https://ttkbootstrap.readthedocs.io/en/latest/zh/api/tooltip/#ttkbootstrap.tooltip.ToolTip  
 美化scrollbar  
 写好注释  

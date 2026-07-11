@@ -39,6 +39,8 @@ executor = None
 state = tkinter.NORMAL #当前所有按钮的状态
 archives = []
 info_password = False
+release_colors = {"Alpha":ttkbootstrap.constants.DANGER,"Beta":ttkbootstrap.constants.WARNING,"Stable":ttkbootstrap.constants.SUCCESS}
+    
 
 class MetadataError(Exception): #自定义异常
     pass
@@ -130,12 +132,15 @@ class LoginWindow(Modal):
         self.default_password = default_password
         self.warning = False
         self.default_cache = cache
-        super().__init__(master,title="登录",customize_button=True,transient=False,geometry="1200x300")
+        super().__init__(master,title="登录",customize_button=True,transient=False,geometry="1800x350")
     def choose_file(self):
         folder = tkinter.filedialog.askdirectory()
         self.dir.delete(0,tkinter.END)
         self.dir.insert(tkinter.INSERT,folder)
     def body(self,master):
+        if shared.current_build == "Alpha" or shared.current_build == "Beta":
+            release = ttkbootstrap.Label(master,text=f"{shared.current_build}: {shared.builds[shared.current_build]}",anchor="center",bootstyle=(ttkbootstrap.constants.INVERSE,release_colors[shared.current_build]))
+            release.pack(fill=tkinter.X)
         path_frame = tkinter.Frame(master)
         path_frame.pack(fill=tkinter.X)
         path_label = tkinter.Label(path_frame,text="路径：")
@@ -460,6 +465,10 @@ root.title("Encrypted Archive Viewer")
 root.geometry("2200x1200")
 root.withdraw()
 
+if shared.current_build == "Alpha" or shared.current_build == "Beta":
+    release = ttkbootstrap.Label(root,text=f"{shared.current_build}: {shared.builds[shared.current_build]}",anchor="center",bootstyle=(ttkbootstrap.constants.INVERSE,release_colors[shared.current_build]))
+    release.pack(fill=tkinter.X)
+
 top_banner = tkinter.ttk.Frame(root)
 top_banner.pack(fill=tkinter.X)
 
@@ -484,6 +493,9 @@ umount_button.grid(row=0,column=2,padx=10)
 
 repair_everything = ttkbootstrap.Button(top_banner,text="检查修复所有文件",command=repair_all)
 repair_everything.grid(row=0,column=3,padx=10)
+
+about = ttkbootstrap.Button(top_banner,text="关于",command=repair_all)
+repair_everything.grid(row=0,column=4,padx=10)
 
 preview_frame = tkinter.Frame()
 preview_frame.pack(fill=tkinter.BOTH,expand=True)
