@@ -1,10 +1,2 @@
-pip install pyperclip
-apt install python3-tk
-pip install pillow
-pip install ttkbootstrap
-tkinterdnd2
-argon2-cffi
-apt install fuse libfuse-dev
-fusepy
-opencv-python
-pdf2image
+apt install python3-tk 7zip poppler-utils python3-gi-cairo libpango1.0-dev libcairo2-dev fuse libfuse-dev
+pip install pyperclip pycairo pdf2image opencv-python fusepy argon2-cffi tkinterdnd2 ttkbootstrap pillow
