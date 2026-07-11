@@ -16,6 +16,8 @@ import PIL.ImageTk
 import io
 import threading
 import shared
+import sys
+import argparse
 
 class Tk(ttkbootstrap.Window,tkinterdnd2.TkinterDnD.Tk): #混合ttkbootstrap和tkinterdnd
     pass
@@ -310,5 +312,19 @@ tag_append.bind("<Return>",user_add)
 
 for i in tags:
     add_tag(i)
+
+parser = argparse.ArgumentParser(description="Creator GUI")
+parser.add_argument("-f","--file",help="The file you wish to encrypt")
+parser.add_argument("-p","--password",help="Password for the file, loads from config.json if not given")
+args = parser.parse_args()
+
+if args.file:
+    @dataclasses.dataclass
+    class Event:
+        data = args.file
+    on_drop(Event())
+
+if args.password:
+    user_password_var.set(value=args.password)
 
 root.mainloop()

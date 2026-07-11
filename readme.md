@@ -111,14 +111,12 @@ GUI部分的界面是tkinter写的，用了ttkbootstrap进行美化。
 2. Icons8：提供了图标。
 
 # 待办
-mounter支持dnd
-mounter支持文件信息修改
-用https://ttkbootstrap.readthedocs.io/en/latest/zh/api/tooltip/#ttkbootstrap.tooltip.ToolTip  
+mounter支持dnd  
+mounter支持文件信息修改  
 美化scrollbar  
 写好注释  
 组件从tkinter.Button等替换为ttkbootstrap.Button  
 logs可以复制
-\n\n致谢\n感谢 元宝​ 在本项目开发过程中提供的代码支持，以及 Icons8​ 提供的精美图标资源。
 
 # 一些其他解释
 CLI工具内的一些内容用的是英文写的，GUI界面用的是中文。  

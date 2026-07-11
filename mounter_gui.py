@@ -21,6 +21,7 @@ import PIL.Image
 import PIL.ImageTk
 import ttkbootstrap
 import tkinter.scrolledtext
+import tkinterdnd2
 
 import passwordutil
 import sevenzipwrapper
@@ -41,7 +42,9 @@ state = tkinter.NORMAL #当前所有按钮的状态
 archives = []
 info_password = False
 release_colors = {"Alpha":ttkbootstrap.constants.DANGER,"Beta":ttkbootstrap.constants.WARNING,"Stable":ttkbootstrap.constants.SUCCESS}
-    
+
+class Tk(ttkbootstrap.Window,tkinterdnd2.TkinterDnD.Tk): #混合ttkbootstrap和tkinterdnd
+    pass
 
 class MetadataError(Exception): #自定义异常
     pass
@@ -508,7 +511,12 @@ def load_archives():
         future = executor.submit(load_preview,archive)
         future.add_done_callback(on_loaded)
 
-root = ttkbootstrap.Window()
+def on_drop(event):
+    file_path = event.data.strip().strip("{}")
+    create_file = subprocess.Popen(["python3","-m","creator_gui.py","-f",file_path,"-p",user_password])
+    
+
+root = Tk()
 root.title("Encrypted Archive Viewer")
 root.geometry("2200x1200")
 root.withdraw()
@@ -557,6 +565,9 @@ canvas.create_window((0,0),window=frame,anchor=tkinter.NW)
 canvas.configure(yscrollcommand=scrollbar.set)
 canvas.pack(side=tkinter.LEFT,fill=tkinter.BOTH,expand=True)
 scrollbar.pack(side="right",fill=tkinter.Y)
+
+frame.drop_target_register(tkinterdnd2.DND_FILES)
+frame.dnd_bind("<<Drop>>",on_drop)
 
 load_indicator = ttkbootstrap.Floodgauge(root,text="已加载：0/0")
 load_indicator.pack(fill=tkinter.X)
