@@ -1,0 +1,10 @@
+pip install pyperclip
+apt install python3-tk
+pip install pillow
+pip install ttkbootstrap
+tkinterdnd2
+argon2-cffi
+apt install fuse libfuse-dev
+fusepy
+opencv-python
+pdf2image

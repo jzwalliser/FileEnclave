@@ -27,6 +27,11 @@ import tkinterdnd2
 import passwordutil
 import sevenzipwrapper
 import shared
+import gettext
+
+gettext.bindtextdomain("mounter_gui","./locale")
+gettext.textdomain("mounter_gui")
+_ = gettext.gettext
 
 logs = ""
 archive_dir = "./archives"
@@ -67,7 +72,7 @@ class Modal(): #自定义对话框
         frame = tkinter.Frame(self.top)
         frame.pack(fill=tkinter.BOTH,expand=True)
         focus = self.body(frame)
-        ok_btn = tkinter.Button(self.top,text="确定",command=self.top.destroy)
+        ok_btn = tkinter.Button(self.top,text=_("Ok"),command=self.top.destroy)
         ok_btn.bind("<Return>",lambda event: self.top.destroy())
         if not customize_button:
             ok_btn.pack(pady=20)
@@ -103,19 +108,19 @@ class LogWindow(Modal):
         
         buttons_frame = tkinter.Frame(master)
         buttons_frame.pack()
-        self.copy_button = ttkbootstrap.Button(buttons_frame,text="复制到剪贴板",command=self.copy)
+        self.copy_button = ttkbootstrap.Button(buttons_frame,text=_("Copy to clipboard"),command=self.copy)
         self.copy_button.grid(row=0,column=0,ipadx=20,padx=20,pady=10)
-        ok_button = ttkbootstrap.Button(buttons_frame,text="确定",command=self.top.destroy)
+        ok_button = ttkbootstrap.Button(buttons_frame,text=_("Ok"),command=self.top.destroy)
         ok_button.grid(row=0,column=1,ipadx=20,padx=20,pady=10)
         return ok_button
     def copy(self):
         pyperclip.copy(self.logs)
-        self.copy_button.configure(text="已复制",bootstyle=ttkbootstrap.constants.SUCCESS)
+        self.copy_button.configure(text=_("Copied"),bootstyle=ttkbootstrap.constants.SUCCESS)
 
 class InfoWindow(Modal):
     def __init__(self,master,info):
         self.info = info
-        super().__init__(master,title="文件信息",resizable=(True,True))
+        super().__init__(master,title=_("File Info"),resizable=(True,True))
     def body(self,master):
         textpad = tkinter.scrolledtext.ScrolledText(master,width=80,height=15,font=("Noto Sans Mono",13))
         textpad.insert(tkinter.INSERT,self.info)
@@ -126,16 +131,16 @@ class DeleteWindow(Modal):
     def __init__(self,master,archive,filename):
         self.archive = archive
         self.filename = filename
-        super().__init__(master,title="删除",customize_button=True)
+        super().__init__(master,title=_("Delete"),customize_button=True)
     def body(self,master):
-        message = f"你即将删除：{self.archive} ({self.filename})\n此操作无法撤销，内部文件也无法恢复。是否继续？"
+        message = _("You are going to delete: {archive} ({filename})\nThis can't be undone, and the file can't be recovered. Proceed?").format(archive=self.archive,filename=self.filename)
         textpad = tkinter.scrolledtext.ScrolledText(master,width=80,height=10,font=("Noto Sans Mono",13))
         textpad.insert(tkinter.INSERT,message)
         textpad.configure(state=tkinter.DISABLED)
         textpad.pack()
         buttons = tkinter.Frame(self.top)
         buttons.pack()
-        ok_button = tkinter.Button(buttons,text="确定",command=self.apply)
+        ok_button = tkinter.Button(buttons,text=_("Yes"),command=self.apply)
         ok_button.grid(row=0,column=0,ipadx=20,padx=20,pady=10)
         cancel_button = tkinter.Button(buttons,text="取消",command=self.top.destroy)
         cancel_button.grid(row=0,column=1,ipadx=20,padx=20,pady=10)
@@ -151,7 +156,7 @@ class LoginWindow(Modal):
         self.default_password = default_password
         self.warning = False
         self.default_cache = cache
-        super().__init__(master,title="登录",customize_button=True,transient=False,geometry="1800x350")
+        super().__init__(master,title=_("Login"),customize_button=True,transient=False,geometry="1800x350")
     def choose_file(self):
         folder = tkinter.filedialog.askdirectory()
         self.dir.delete(0,tkinter.END)
@@ -160,39 +165,38 @@ class LoginWindow(Modal):
         if shared.current_build == "Alpha" or shared.current_build == "Beta":
             release = ttkbootstrap.Label(master,text=f"{shared.current_build}: {shared.builds[shared.current_build]}",anchor="center",bootstyle=(ttkbootstrap.constants.INVERSE,release_colors[shared.current_build]))
             release.pack(fill=tkinter.X)
-            release_tip = ttkbootstrap.widgets.tooltip.ToolTip(release,text="Alpha：内测版，有许多bug\nBeta：公测版，有一些bug\nStable：稳定版，应该没bug啦",delay=0)
 
         path_frame = tkinter.Frame(master)
         path_frame.pack(fill=tkinter.X)
-        path_label = tkinter.Label(path_frame,text="路径：")
+        path_label = tkinter.Label(path_frame,text=_("Path: "))
         path_label.pack(side=tkinter.LEFT)
         self.dir = tkinter.Entry(path_frame)
         self.dir.pack(side=tkinter.LEFT,fill=tkinter.X,expand=True)
         self.dir.bind("<Return>",self.apply)
         if self.default_path:
             self.dir.insert(0,self.default_path)
-        dir_button = tkinter.Button(path_frame,text="选择",command=self.choose_file)
+        dir_button = tkinter.Button(path_frame,text="🗁",command=self.choose_file)
         dir_button.pack(side=tkinter.LEFT,padx=10)
 
         password_frame = tkinter.Frame(master)
         password_frame.pack(fill=tkinter.X)
-        password_label = tkinter.Label(password_frame,text="密码：")
+        password_label = tkinter.Label(password_frame,text=_("Password: "))
         password_label.pack(side=tkinter.LEFT)
         self.password = tkinter.Entry(password_frame,show="●")
         self.password.pack(side=tkinter.LEFT,fill=tkinter.X,expand=True)
         self.password.bind("<Return>",self.apply)
         if self.default_password:
             self.password.insert(0,self.default_password)
-        password_show = tkinter.Button(password_frame,text="显示")
+        password_show = tkinter.Button(password_frame,text="👁")
         password_show.pack(side=tkinter.LEFT,padx=10)
         password_show.bind("<ButtonPress-1>",lambda event: self.password.configure(show=""))
         password_show.bind("<ButtonRelease-1>",lambda event: self.password.configure(show="●"))
 
         cache_frame = tkinter.Frame(master)
         cache_frame.pack(fill=tkinter.X)
-        cache_label = tkinter.Label(cache_frame,text="缓存：")
+        cache_label = tkinter.Label(cache_frame,text=_("Cache: "))
         cache_label.pack(side=tkinter.LEFT)
-        cache_tip = ttkbootstrap.widgets.tooltip.ToolTip(cache_label,text="缓存，用于临时存储文件切片，以提高加载速度。推荐16 MB，建议不超过512 MB。",delay=0)
+        cache_tip = ttkbootstrap.widgets.tooltip.ToolTip(cache_label,text=_("The cache temporarily stores file chunks to improve loading performance. 16 MB is recommended; the maximum should not exceed 512 MB."),delay=0)
         self.cache = tkinter.ttk.Combobox(cache_frame,values=["不启用","1 MB","2 MB","4 MB","8 MB","16 MB","32 MB","64 MB","128 MB","256 MB"])
         self.cache.pack(side=tkinter.LEFT,fill=tkinter.X,expand=True)
         self.cache_show = tkinter.Label(cache_frame)
@@ -206,15 +210,15 @@ class LoginWindow(Modal):
         self.update_size()
 
         self.info_show_password_var = tkinter.IntVar(value=0)
-        info_show_passwords = ttkbootstrap.Checkbutton(master,text="展示盐和密码（仅调试用）",variable=self.info_show_password_var)
+        info_show_passwords = ttkbootstrap.Checkbutton(master,text=_("Show salt and passwords (For debugging only)"),variable=self.info_show_password_var)
         info_show_passwords.pack(anchor=tkinter.W,padx=10)
-        info_show_tip = ttkbootstrap.widgets.tooltip.ToolTip(info_show_passwords,text="若选中，右键显示文件信息的时候会把盐、一级密码和二级密码全都展示出来。一般来说，这个功能仅用于调试。",delay=0)
+        info_show_tip = ttkbootstrap.widgets.tooltip.ToolTip(info_show_passwords,text=_("When enabled, right-clicking and selecting File Info will display the salt, primary password, and secondary password. This feature is intended for debugging purposes only."),delay=0)
 
         buttons_frame = tkinter.Frame(master)
         buttons_frame.pack()
-        ok_button = tkinter.Button(buttons_frame,text="确定",command=self.apply)
+        ok_button = tkinter.Button(buttons_frame,text=_("Enter"),command=self.apply)
         ok_button.grid(row=0,column=0,ipadx=20,padx=20,pady=10)
-        cancel_button = tkinter.Button(buttons_frame,text="取消",command=self.top.destroy)
+        cancel_button = tkinter.Button(buttons_frame,text=_("Cancel"),command=self.top.destroy)
         cancel_button.grid(row=0,column=1,ipadx=20,padx=20,pady=10)
         return self.password # 初始焦点
     def apply(self,event=None):
@@ -234,46 +238,45 @@ class LoginWindow(Modal):
         if size > 512 * 1024 ** 2:
             self.cache_show.configure(fg="red")
             if not self.warning:
-                tkinter.messagebox.showwarning("缓存大小",f"您设置的缓存太大了（{shared.format_bytes(size)}），大于512 MB。这种情况下，打开一个大文件就有可能引发OOM（内存不足）。")
+                tkinter.messagebox.showwarning(_("Cache size"),_("Cache too large ({size}), exceeding 512 MB. Opening a large file might trigger an OOM (Out of Memory) error.").format(size=shared.format_bytes(size)))
                 self.warning = True
         else:
             self.cache_show.configure(fg="black")
 
 class AboutWindow(Modal):
     def __init__(self,master):
-        super().__init__(master,title="关于文件加密")
+        super().__init__(master,title=_("About FileEnclave"))
     def body(self,master):
-        main = tkinter.Label(master,text="文件加密",font=(None,30))
+        main = tkinter.Label(master,text="FileEnclave",font=(None,30))
         main.pack()
-        ver = tkinter.Label(master,text=f"版本：{shared.build_version} {shared.current_build}")
+        ver = tkinter.Label(master,text=_("Version: {build_version} {current_build}").format(build_version=shared.build_version,current_build=shared.current_build))
         ver.pack()
         release = ttkbootstrap.Label(master,text=f"{shared.builds[shared.current_build]}",anchor="center",bootstyle=(release_colors[shared.current_build]))
         release.pack(fill=tkinter.X)
-        slogan = tkinter.Label(master,text="愿你的数字资产在此得到庇护",font=(None,10,"italic"),justify=tkinter.LEFT)
+        slogan = tkinter.Label(master,text=_("May your digital assets find sanctuary here"),font=(None,10,"italic"),justify=tkinter.LEFT)
         slogan.pack()
-        about_frame = tkinter.ttk.LabelFrame(master,text="关于")
+        about_frame = tkinter.ttk.LabelFrame(master,text=_("About"))
         about_frame.pack(padx=10)
-        desc_para1 = tkinter.Label(about_frame,text="简介",font=(None,20),justify=tkinter.LEFT)
+        desc_para1 = tkinter.Label(about_frame,text=_("Introduction"),font=(None,20),justify=tkinter.LEFT)
         desc_para1.pack(anchor=tkinter.W)
-        desc_para2 = tkinter.Label(about_frame,text="这是一款面向 Linux 平台的安全文件加密工具，主要用于保护各类文件的数据安全。",justify=tkinter.LEFT)
+        desc_para2 = tkinter.Label(about_frame,text=_("A Linux-based file encryption tool for safeguarding sensitive data."),justify=tkinter.LEFT,wraplength=3000)
         desc_para2.pack(anchor=tkinter.W)
-        desc_para3 = tkinter.Label(about_frame,text="特性",font=(None,20),justify=tkinter.LEFT)
+        desc_para3 = tkinter.Label(about_frame,text=_("Features"),font=(None,20),justify=tkinter.LEFT)
         desc_para3.pack(anchor=tkinter.W)
-        desc_para4 = tkinter.Label(about_frame,text="安全可靠：采用安全性极高的 Argon2id 算法派生密钥，配合成熟的 7z 加密容器，有效抵御暴力破解与明文攻击。\n高效灵活：内部采用随机密钥加密文件，修改用户密码无需重新加密数据；支持切片存储与按需加载，可流畅处理大文件而不占用过多内存。\n隐私优先：解密时通过 FUSE 技术将文件挂载为虚拟文件系统，数据全程存在于内存中，卸载或意外断电后文件即刻消失，避免磁盘残留风险。\n容错性强：支持生成恢复数据（PAR），可在一定程度上修复因存储介质损坏导致的文件错误。\n友好易用：除了功能完备的命令行工具外，还提供了基于 Tkinter (ttkbootstrap) 开发的图形化界面，操作直观便捷。",justify=tkinter.LEFT)
+        desc_para4 = tkinter.Label(about_frame,text=_("Secure & Reliable:​ Utilizes the highly secure Argon2id algorithm for key derivation, combined with 7z encryption containers to effectively resist brute-force and plaintext attacks.\nEfficient & Flexible:​ Employs randomly generated internal keys for file encryption, eliminating the need to re-encrypt data when changing user passwords. Supports chunk-based storage and on-demand loading, enabling smooth handling of large files without excessive memory consumption.\nPrivacy-First:​ Leverages FUSE technology to mount files as a virtual filesystem during decryption. Data resides entirely in memory and vanishes instantly upon unmounting or unexpected power loss, mitigating the risk of disk residue.\nHigh Fault Tolerance:​ Supports the generation of recovery data (using PAR), allowing for partial repair of file corruption caused by storage media degradation.\nUser-Friendly:​ In addition to a fully-featured CLI tool, a graphical interface built with Tkinter (ttkbootstrap) is provided, ensuring an intuitive and streamlined user experience."),justify=tkinter.LEFT,wraplength=2000)
         desc_para4.pack(anchor=tkinter.W)
-        desc_para5 = tkinter.Label(about_frame,text="网站",font=(None,20),justify=tkinter.LEFT)
+        desc_para5 = tkinter.Label(about_frame,text=_("Website"),font=(None,20),justify=tkinter.LEFT)
         desc_para5.pack(anchor=tkinter.W)
         desc_para6 = ttkbootstrap.Label(about_frame,text="Github：https://github.com/jzwalliser/FileEnclave",justify=tkinter.LEFT,foreground="#2222FF",cursor="hand2")
         desc_para6.pack(anchor=tkinter.W)
         desc_para6.bind("<ButtonRelease-1>",lambda event: webbrowser.open("https://github.com/jzwalliser/FileEnclave"))
         desc_para6.bind("<Enter>",lambda event: desc_para6.configure(foreground="#6666FF"))
         desc_para6.bind("<Leave>",lambda event: desc_para6.configure(foreground="#2222FF"))
-        desc_para7 = tkinter.Label(about_frame,text="致谢",font=(None,20),justify=tkinter.LEFT)
+        desc_para7 = tkinter.Label(about_frame,text=_("Credits"),font=(None,20),justify=tkinter.LEFT)
         desc_para7.pack(anchor=tkinter.W)
-        desc_para8 = tkinter.Label(about_frame,text="感谢元宝​在本项目中提供了代码，以及 Icons8​ 提供了精美图标，还有许许多多其它开源库的作者们。",justify=tkinter.LEFT)
+        desc_para8 = tkinter.Label(about_frame,text=_("Thanks to Yuanbao for providing some code for this project, Icons8 for the beautiful icons, and many other open-source library authors for providing easy-to-use libraries."),justify=tkinter.LEFT,wraplength=3000)
         desc_para8.pack(anchor=tkinter.W)
         
-
 def log(message): 
     global logs
     if message:
@@ -288,9 +291,9 @@ def repair_all():
             log(i)
         repair_everything.configure(state=tkinter.NORMAL,bootstyle=ttkbootstrap.constants.SUCCESS)
         log_button.configure(bootstyle=ttkbootstrap.constants.SUCCESS)
-        repair_everything.configure(text="修复完成，可打开Logs查看")
+        repair_everything.configure(text=_("Repair done, open logs for results."))
         root.after(2000,lambda: repair_everything.configure(bootstyle=ttkbootstrap.constants.PRIMARY))
-        root.after(2000,lambda: repair_everything.configure(text="修复检查所有文件"))
+        root.after(2000,lambda: repair_everything.configure(text=_("Check & Repair all files.")))
         root.after(4000,lambda: log_button.configure(bootstyle=ttkbootstrap.constants.PRIMARY))
 
     thread = threading.Thread(target=newthread)
@@ -301,8 +304,9 @@ def repair_file(file):
     def newthread(file):
         repair = subprocess.Popen(["python3","repair.py","-f",file],stdout=subprocess.PIPE)
         repair.wait()
+        output = repair.stdout.read().decode("utf-8")
         log(repair.stdout.read().decode("utf-8").rstrip())
-        tkinter.messagebox.showinfo("修复",output)
+        tkinter.messagebox.showinfo(_("Repair"),output)
         
     thread = threading.Thread(target=newthread,args=[file])
     thread.start()
@@ -433,37 +437,37 @@ def on_loaded(future):
                 global menu
                 if menu:
                     menu.unpost()
-                file_info = f"=====文件信息=====\n"
-                file_info += f"路径：{pathlib.Path(archive).parent}\n"
-                file_info += f"加密：{pathlib.Path(archive).name}\n"
-                file_info += f"文件：{filename}\n"
-                file_info += f"大小：{shared.format_bytes(size)} ({size} Bytes)\n"
-                file_info += f"=====存储信息=====\n"
-                file_info += f"切片数量：{chunk_num}\n"
-                file_info += f"切片规格：{shared.format_bytes(chunk_size)} ({chunk_size} Bytes)\n"
+                file_info = _("File info\n")
+                file_info += _("Path: {path}\n").format(path=pathlib.Path(archive).parent)
+                file_info += _("Encrypted: {crypt}\n").format(crypt=pathlib.Path(archive).name)
+                file_info += _("Filename: {filename}\n").format(filename=filename)
+                file_info += _("Size: {formatted} ({size} Bytes)\n").format(formatted=shared.format_bytes(size),size=size)
+                file_info += _("Storage info\n")
+                file_info += _("Chunks: {chunk_num}\n").format(chunk_num=chunk_num)
+                file_info += _("Chunk size: {formatted} ({chunk_size} Bytes)\n").format(formatted=shared.format_bytes(chunk_size),chunk_size=chunk_size)
                 if info_password:
-                    file_info += f"=====加密信息=====\n"
-                    file_info += f"盐：{salt}\n"
-                    file_info += f"一级密码：{user_pwd}\n"
-                    file_info += f"二级密码：{file_pwd}\n"
+                    file_info += _("Encryption info\n")
+                    file_info += _("Salt: {salt}\n").format(salt=salt)
+                    file_info += _("Primary Password: {user_pwd}\n").format(user_pwd=user_pwd)
+                    file_info += _("Secondary Password: {file_pwd}\n").format(file_pwd=file_pwd)
                 if tags:
-                    file_info += f"=====其它信息=====\n"
-                    file_info += f"标签：{parse(tags)}\n"
+                    file_info += _("Other info\n")
+                    file_info += _("Tags: {tags}\n").format(tags=parse(tags))
                 
                 menu = tkinter.Menu(btn,tearoff=0)
-                menu.add_command(label="修复",command=lambda: repair_file(archive))
-                menu.add_command(label="删除",command=lambda: delete_file(archive,filename,btn))
-                menu.add_command(label="文件信息",command=lambda: InfoWindow(root,file_info))
+                menu.add_command(label=_("Repair"),command=lambda: repair_file(archive))
+                menu.add_command(label=_("Delete"),command=lambda: delete_file(archive,filename,btn))
+                menu.add_command(label=_("File Info"),command=lambda: InfoWindow(root,file_info))
                 menu.post(event.x_root,event.y_root)
                 
             btn.image = tk_img
             btn.bind("<Button-3>",show_menu)
             btn.grid(row=row,column=col,padx=5,pady=5)
             preview_buttons += [btn]
-            load_indicator.configure(text=f"已加载：{len(preview_buttons)}/{total}",value=int(len(preview_buttons) / total * 100))
+            load_indicator.configure(text=_("Loading: {loaded}/{total}").format(loaded=len(preview_buttons),total=total),value=int(len(preview_buttons) / total * 100))
             if len(preview_buttons) == total:
                 load_indicator.configure(bootstyle=ttkbootstrap.constants.SUCCESS)
-                root.after(1000,lambda: load_indicator.configure(text="已全部加载完毕"))
+                root.after(1000,lambda: load_indicator.configure(text=_("Finished loading")))
                 root.after(3000,lambda: load_indicator.pack_forget())
             
     root.after(0,add_button)
@@ -536,12 +540,11 @@ root.withdraw()
 if shared.current_build == "Alpha" or shared.current_build == "Beta":
     release = ttkbootstrap.Label(root,text=f"{shared.current_build}: {shared.builds[shared.current_build]}",anchor="center",bootstyle=(ttkbootstrap.constants.INVERSE,release_colors[shared.current_build]))
     release.pack(fill=tkinter.X)
-    release_tip = ttkbootstrap.widgets.tooltip.ToolTip(release,text="Alpha：内测版，有许多bug\nBeta：公测版，有一些bug\nStable：稳定版，应该没bug啦",delay=0)
-
+    
 top_banner = tkinter.ttk.Frame(root)
 top_banner.pack(fill=tkinter.X)
 
-search_frame = tkinter.ttk.LabelFrame(top_banner,text="搜索")
+search_frame = tkinter.ttk.LabelFrame(top_banner,text=_("Search"))
 search_frame.grid(row=0,column=0,padx=20)
 
 search_entry = tkinter.Entry(search_frame)
@@ -552,22 +555,22 @@ search_entry.bind("<KeyRelease>",search_file)
 search_reset = ttkbootstrap.Button(search_entry,text="×",command=reset_search,cursor="arrow",bootstyle=ttkbootstrap.constants.LINK)
 search_reset.pack(side=tkinter.RIGHT)
 
-log_button = ttkbootstrap.Button(top_banner,text="Logs",command=lambda: LogWindow(root,logs))
+log_button = ttkbootstrap.Button(top_banner,text=_("Logs"),command=lambda: LogWindow(root,logs))
 log_button.grid(row=0,column=1,padx=10)
-log_tip = ttkbootstrap.widgets.tooltip.ToolTip(log_button,text="日志，显示软件在运行中的一些调试信息。",delay=0)
+log_tip = ttkbootstrap.widgets.tooltip.ToolTip(log_button,text=_("The log shows some debugging information while the software is running."),delay=0)
 
-umount_button = tkinter.ttk.Button(top_banner,text="卸载卷",command=on_umount)
+umount_button = tkinter.ttk.Button(top_banner,text=_("Unount"),command=on_umount)
 umount_button.grid(row=0,column=2,padx=10)
-umount_tip = ttkbootstrap.widgets.tooltip.ToolTip(umount_button,text="卸载当前挂载的FUSE文件系统。点击之后，您可以打开其它加密的文件。若出现“文件打不开”之类的问题，点基本按钮也可能修复。",delay=0)
+umount_tip = ttkbootstrap.widgets.tooltip.ToolTip(umount_button,text=_("Unmount the currently mounted FUSE file system. After clicking, you can open other encrypted files. If issues occur, clicking the button might also fix them."),delay=0)
 
-repair_everything = ttkbootstrap.Button(top_banner,text="检查修复所有文件",command=repair_all)
+repair_everything = ttkbootstrap.Button(top_banner,text=_("Check & Repair all files"),command=repair_all)
 repair_everything.grid(row=0,column=3,padx=10)
-repair_tip = ttkbootstrap.widgets.tooltip.ToolTip(repair_everything,text="会检查该路径内的文件是否损坏，并尝试修复它们。",delay=0)
+repair_tip = ttkbootstrap.widgets.tooltip.ToolTip(repair_everything,text=_("Scans files within the specified path for corruption and attempts to repair them."),delay=0)
 
-add_button = ttkbootstrap.Button(top_banner,text="添加文件",command=lambda: subprocess.Popen(["python3","creator_gui.py"]))
+add_button = ttkbootstrap.Button(top_banner,text=_("Add Files"),command=lambda: subprocess.Popen(["python3","creator_gui.py"]))
 add_button.grid(row=0,column=4,padx=10)
 
-about = ttkbootstrap.Button(top_banner,text="关于",command=lambda: AboutWindow(root))
+about = ttkbootstrap.Button(top_banner,text=_("About"),command=lambda: AboutWindow(root))
 about.grid(row=0,column=5,padx=10)
 
 preview_frame = tkinter.Frame()
@@ -584,7 +587,7 @@ scrollbar.pack(side="right",fill=tkinter.Y)
 frame.drop_target_register(tkinterdnd2.DND_FILES)
 frame.dnd_bind("<<Drop>>",on_drop)
 
-load_indicator = ttkbootstrap.Floodgauge(root,text="已加载：0/0")
+load_indicator = ttkbootstrap.Floodgauge(root,text=_("Loading: 0/0"))
 load_indicator.pack(fill=tkinter.X)
 root.protocol("WM_DELETE_WINDOW",on_close)
 
