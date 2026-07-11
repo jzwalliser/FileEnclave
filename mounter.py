@@ -36,7 +36,7 @@ class SevenZipMemoryFuse(fuse.Operations):
             self.mount_filename = mount_filename
         print("Done",time.time() - start_time)
         if open_file:
-            subprocess.Popen(["open",mountpoint + "/" + self.mount_filename])
+            subprocess.Popen(["xdg-open",mountpoint + "/" + self.mount_filename])
             print("Open",mountpoint + "/" + self.mount_filename)
 
     def read_file(self,filename,password=None): #将文件解压到内存

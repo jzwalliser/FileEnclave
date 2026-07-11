@@ -110,18 +110,6 @@ GUI部分的界面是tkinter写的，用了ttkbootstrap进行美化。
 1. 元宝：帮我写了30%的代码，打下了本项目的基础。  
 2. Icons8：提供了图标。
 
-# 待办
-mounter支持dnd  
-mounter支持文件信息修改  
-美化scrollbar  
-写好注释  
-组件从tkinter.Button等替换为ttkbootstrap.Button  
-logs可以复制
-
-# 一些其他解释
-CLI工具内的一些内容用的是英文写的，GUI界面用的是中文。  
-还有，我个人在写代码的时候喜欢用list += [item]，因为list.append()太长了，我懒~
-
 # FAQ
 Q: 为什么刚开始显示加载了0/18，之后变成了16/16？少加载的两个到哪儿去了？  
 A: 因为18是所有7z压缩包，但是有两个压缩包要么就密码不对，要么内部结构不对，因此无法被加载
