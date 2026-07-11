@@ -16,31 +16,38 @@ gi.require_version("Pango","1.0")
 gi.require_version("PangoCairo","1.0")
 import gi.repository.Pango
 import gi.repository.PangoCairo
+import mimetypes
+
+mimetypes.add_type("text/x-python",".pyw")
+mimetypes.add_type("image/webp",".webp")
+mimetypes.add_type("text/json",".json")
 
 def preview(file_path,quality=100,max_width=960,max_height=540):
-    if pathlib.Path(file_path).suffix in "." + ".".join(["jpeg","jpg","jpe","jfif","png","webp","tiff","tif","jp2","jpx","avif","gif","bmp","mp4","mov","avi","mkv","webm","flv","ts","mpg"]):
-        try:
-            return add_background(preview_media(file_path,max_width=960,max_height=540),width=960,height=540)
-        except:
-            return add_background(PIL.Image.open("./icons/video_file.png").convert("RGB"))
-    elif pathlib.Path(file_path).suffix in ".pdf":
-        try:
-            return add_background(preview_pdf(file_path,max_width=960,max_height=540),width=960,height=540)
-        except:
-            return add_background(PIL.Image.open("./icons/image_file.png").convert("RGB"))
-    elif pathlib.Path(file_path).suffix in "." + ".".join(["md","a","a51","ada","adb","ads","ahk","aj","ampl","apib","apl","applescript","arc","as","asc","ascx","ash","ashx","asm","asmx","asp","aspx","au3","aug","awk","b","bas","bash","bb","befunge","bf","bib","bmx","boo","bro","brs","bsv","bzl","c","c++","capnp","cbl","cc","ccm","ceylon","cgi","chpl","chs","cjs","clj","cljc","cljs","clp","cls","cmake","cmakein","cob","coffee","coffeescript","cpp","cppm","cpy","cr","cs","csh","cshtml","csx","cxx","d","dart","dats","db2","ddl","decls","dml","dpk","dpr","dyalog","e","ecl","el","elm","em","erl","ex","exs","f","f03","f08","f77","f90","f95","for","frm","fs","fsi","fsx","fun","g4","gawk","go","groovy","gsh","gvy","gy","h","hats","hh","hpp","hqf","hrl","hs","htm","html","hxx","i","inc","ino","jav","java","jl","js","json","jsp","jspx","jsx","ksh","kt","kts","l","lhs","lisp","lsl","lsp","lss","lua","m","mawk","mjs","ml","mli","mm","mod","mss","n","nasm","nim","nims","nix","o","obj","odin","opal","p","pas","php","php3","php4","php5","phps","phtml","pkl","pl","plx","pm","pp","prc","pro","ps1","psd1","psm1","purs","pxd","pxi","py","pyw","pyx","r","rake","rb","re","rei","rhtml","rkt","rktd","rktl","rpy","rq","rs","rsin","ru","s","sage","sagews","sass","sats","sbt","sc","scala","scaml","scd","sce","sci","scm","scpt","scss","self","sh","shen","sl","sld","sls","sma","smali","sml","smt","smt2","sp","sparql","sqf","sql","sqlpl","ss","st","stan","ston","sty","styl","sv","svelte","svh","swift","t","tcl","tcsh","tex","tm","toml","trg","ts","tsx","txt","v","vala","vapi","vb","vba","vbe","vbs","vh","vpr","vue","wast","wat","wsc","wsf","xhtml","xml","xsd","xslt","yaml","yml","zig","zsh"]):
-        try:
-            return add_background(preview_text(file_path,max_width=960,max_height=540),width=960,height=540)
-        except:
-            traceback.print_exc()
-            return add_background(PIL.Image.open("./icons/document_file.png").convert("RGB"))
-    elif pathlib.Path(file_path).suffix in "." + ".".join(["mp3","wav","aac","m4a","flac","ogg","wma"]):
-        print("audio")
-        return add_background(PIL.Image.open("./icons/audio_file.png").convert("RGB"))
-    elif pathlib.Path(file_path).suffix in "." + ".".join(["7z","apk","dll","dmg","doc","exe","otf","ppt","ps","rar","tar","woff","zip","pptx","docx"]):
-        return add_background(PIL.Image.open(f"./icons/{pathlib.Path(file_path).suffix[1:]}.png").convert("RGB"))
+    ftype = mimetypes.guess_type(file_path)
+    if ftype[0] == None:
+        img = load_icon("file.png")
     else:
-        return add_background(PIL.Image.open("./icons/file.png").convert("RGB"))
+        main = ftype[0].split("/")[0]
+        sub = ftype[0].split("/")[1]
+        maindict = {"image":(preview_media,"image_file.png"),"video":(preview_media,"video_file.png"),"text":(preview_text,"document_file.png"),"audio":(preview_audio,"audio_file.png")}
+        typedict = {"application/pdf":(preview_pdf,"pdf.png")}
+        if main in maindict.keys():
+            try:
+                img = maindict[main][0](file_path)
+            except:
+                traceback.print_exc()
+                img = load_icon(maindict[main][1])
+        elif ftype[0] in typedict.keys():
+            print("pdf")
+            try:
+                img = typedict[ftype[0]][0](file_path)
+            except:
+                img = load_icon(typedict[ftype[0]])
+        elif pathlib.Path(file_path).suffix in "." + ".".join(["7z","apk","dll","dmg","doc","exe","otf","ppt","ps","rar","tar","woff","zip","pptx","docx"]):
+            img = load_icon(f"{pathlib.Path(file_path).suffix[1:]}.png")
+        else:
+            img = load_icon("file.png")
+    return add_background(img)
 
 def preview_media(video_path,max_width=960,max_height=540):
     cap = cv2.VideoCapture(video_path)
@@ -67,11 +74,8 @@ def preview_pdf(pdf_path,max_width=960,max_height=540,dpi=200):
     images = pdf2image.convert_from_path(pdf_path,dpi=dpi,first_page=1,last_page=1,fmt="jpeg")
     if not images:
         raise RuntimeError("Pdf empty or corrupt.")
-    img = images[0]
-    buf = io.BytesIO()
-    img.save(buf,format="JPEG",quality=95)
-    pil_img = PIL.Image.open(io.BytesIO(buf.getvalue()))
-    pil_img.load()
+    pil_img = images[0]
+    pil_img.convert("RGB")
     return pil_img
     
 def preview_text(text_path,max_width=960,max_height=540):
@@ -96,11 +100,18 @@ def preview_text(text_path,max_width=960,max_height=540):
     pil_img = pil_img.convert("RGB")
     return pil_img
 
+def preview_audio(audio_path,max_width=960,max_height=540):
+    return load_icon("audio_file.png")
+
 def add_background(img,width=960,height=540,quality=100,background=(0,0,0)):
     pil_img = PIL.ImageOps.pad(img,(width,height),method=PIL.Image.Resampling.LANCZOS,color=background,centering=(0.5,0.5)) #把图片贴在黑色背景正中央
     buffer = io.BytesIO() #保存到内存
     pil_img.save(buffer,format="JPEG",quality=quality,optimize=True)
     return buffer.getvalue()
+
+def load_icon(icon):
+    img = PIL.Image.open(f"./icons/{icon}")
+    return img.convert("RGB")
 
 def preview_to_file(path,file="temp.jpg"):
     with open(file,"wb") as f:
