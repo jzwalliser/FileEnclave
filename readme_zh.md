@@ -11,7 +11,7 @@ sudo apt install 7zip poppler-utils python3-gi-cairo libpango1.0-dev libcairo2-d
 ```
 Python 依赖可使用 pip 安装：
 ```bash
-pip install pycairo pdf2image opencv-python fusepy argon2-cffi pillow
+pip install pycairo pdf2image opencv-python fusepy argon2-cffi pillow chardet pygments
 ```
 
 GUI 的话，还要安装额外的依赖：
