@@ -90,8 +90,8 @@ msgid "Files are split into chunks before encryption to boost performance. For e
 msgstr "文件在加密压缩过程中，会被切片，然后再加密，以提高性能。例如，文件大小为51MB，切片大小为10MB，那么文件会被切分为6片（5×10 MB+1×1 MB=51 MB）。"
 
 #: creator_gui.py:281
-msgid "Output folder: "
-msgstr "输出文件夹："
+msgid "Output path: "
+msgstr "输出路径："
 
 #: creator_gui.py:287
 msgid "Start encryption: "

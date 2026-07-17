@@ -7,7 +7,7 @@ This is a file encryption tool capable of encrypting files of all types. It has 
 Install Python and required dependencies on your target Linux machine, then download the source code to run the tool.  
 It has been tested on Ubuntu. CLI system dependencies are as follows:
 ```bash
-sudo apt install 7zip poppler-utils python3-gi-cairo libpango1.0-dev libcairo2-dev fuse libfuse-dev
+sudo apt install 7zip poppler-utils python3-gi-cairo libpango1.0-dev libcairo2-dev fuse libfuse-dev par2
 ```
 Python dependencies can be installed via pip:
 ```bash

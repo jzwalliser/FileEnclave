@@ -9,6 +9,8 @@ import argparse
 import passwordutil
 import sevenzipwrapper
 import time
+import sys
+import traceback
 
 class SevenZipMemoryFuse(fuse.Operations):
     def __init__(self,mountpoint,archive,password,mount_filename=None,max_cache_size=20 * 1024 ** 2,open_file=False):
@@ -114,7 +116,6 @@ class SevenZipMemoryFuse(fuse.Operations):
         stv = os.statvfs('.')
         return dict(f_bsize=stv.f_bsize,f_blocks=stv.f_blocks,f_bfree=stv.f_bfree,f_bavail=stv.f_bavail,f_files=stv.f_files,f_ffree=stv.f_ffree)
 
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="File Decryptor")
     parser.add_argument("archive",help="The archive to decrypt")
@@ -128,4 +129,5 @@ if __name__ == '__main__':
     try:
         fuse.FUSE(SevenZipMemoryFuse(args.mountpoint,args.archive,args.password,args.filename,args.cache_size,args.open_file),args.mountpoint,foreground=True,nothreads=True)
     except:
+        traceback.print_exc()
         sys.exit(1)

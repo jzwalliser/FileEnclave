@@ -7,7 +7,7 @@
 在目标Linux机上安装python以及相关依赖，然后下载源代码即可运行。
 已在 Ubuntu 上完成测试，CLI 所需系统依赖如下：
 ```bash
-sudo apt install 7zip poppler-utils python3-gi-cairo libpango1.0-dev libcairo2-dev fuse libfuse-dev
+sudo apt install 7zip poppler-utils python3-gi-cairo libpango1.0-dev libcairo2-dev fuse libfuse-dev par2
 ```
 Python 依赖可使用 pip 安装：
 ```bash

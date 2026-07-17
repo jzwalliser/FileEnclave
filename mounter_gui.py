@@ -48,6 +48,11 @@ state = tkinter.NORMAL #当前所有按钮的状态
 archives = []
 info_password = False
 release_colors = {"Alpha":ttkbootstrap.constants.DANGER,"Beta":ttkbootstrap.constants.WARNING,"Stable":ttkbootstrap.constants.SUCCESS}
+current_button_count = 0
+folders = {"/"}
+folder_buttons = []
+
+current_dir = "/"
 
 class Tk(ttkbootstrap.Window,tkinterdnd2.TkinterDnD.Tk): #混合ttkbootstrap和tkinterdnd
     pass
@@ -142,7 +147,7 @@ class DeleteWindow(Modal):
         buttons.pack()
         ok_button = tkinter.Button(buttons,text=_("Yes"),command=self.apply)
         ok_button.grid(row=0,column=0,ipadx=20,padx=20,pady=10)
-        cancel_button = tkinter.Button(buttons,text="取消",command=self.top.destroy)
+        cancel_button = tkinter.Button(buttons,text=_("Cancel"),command=self.top.destroy)
         cancel_button.grid(row=0,column=1,ipadx=20,padx=20,pady=10)
         self.answer = False
         return ok_button
@@ -277,6 +282,23 @@ class AboutWindow(Modal):
         desc_para8 = tkinter.Label(about_frame,text=_("Thanks to Yuanbao for providing some code for this project, Icons8 for the beautiful icons, and many other open-source library authors for providing easy-to-use libraries."),justify=tkinter.LEFT,wraplength=3000)
         desc_para8.pack(anchor=tkinter.W)
         
+class FolderWindow(Modal):
+    def __init__(self,master,folders):
+        self.folders = folders
+        super().__init__(master,title=_("Folders"),customize_button=True)
+    def body(self,master):
+        buttons = ttkbootstrap.LabelFrame(master,text="Folders")
+        buttons.pack(ipadx=500,padx=10)
+        for i in self.folders:
+            folder = tkinter.Button(buttons,text=i,anchor=tkinter.W,command=lambda folder=i: self.apply(folder))
+            folder.pack(fill=tkinter.X,padx=10)
+        cancel_button = tkinter.Button(self.top,text=_("Cancel"),command=self.top.destroy)
+        cancel_button.pack(ipadx=20,padx=20,pady=10)
+        self.result = None
+    def apply(self,folder):
+        self.result = folder
+        self.top.destroy()
+        
 def log(message): 
     global logs
     if message:
@@ -326,13 +348,10 @@ def delete_file(archive,filename,button):
         os.system(f"rm {archive}*")
         log(f"[+] Deleted: {archive}*")
         preview_buttons.remove(button)
-        for idx,i in enumerate(preview_buttons):
-            row = idx // columns
-            col = idx % columns
-            idx += 1
-            i.grid(row=row,column=col,padx=5,pady=5)
+        button.destroy()
+        search_file(refresh=True)
 
-def search_file(event=None):
+def search_file(event=None,refresh=False):
     idx = 0
     search_results = 0
     search_strs = search_entry.get().split()
@@ -340,6 +359,8 @@ def search_file(event=None):
     for i in preview_buttons:
         add = True
         i.grid_forget()
+        if (search_scope_var.get() == _("Folder") or refresh) and i.folder != current_dir:
+            add = False
         for j in search_strs:
             add = add and j in i["text"]
         if add:
@@ -389,17 +410,21 @@ def load_preview(archive):
     filename = original_meta["filename"]
     tags = original_meta["tags"]
     size = original_meta["size"]
+    folder = original_meta.get("folder","/")
     chunk_num = meta["chunks"]
     chunk_size = meta["chunk_size"]
     
     img = PIL.Image.open(io.BytesIO(sevenzipwrapper.read_file(archive,"preview",password=file_pwd)))
     img = img.resize((480,270))
-    return archive,img,filename,tags,size,chunk_num,chunk_size,salt,file_pwd,user_pwd
+    return archive,img,filename,folder,tags,size,chunk_num,chunk_size,salt,file_pwd,user_pwd
 
-def hide_menu(event):
+def hide_menu(event=None):
     global menu
     if menu:
-        menu.unpost()
+        try:
+            menu.unpost()
+        except:
+            pass
         menu = None
 
 def parse(tags):
@@ -411,7 +436,7 @@ def parse(tags):
 def on_loaded(future):
     global total
     try:
-        archive,img,filename,tags,size,chunk_num,chunk_size,salt,file_pwd,user_pwd = future.result()
+        archive,img,filename,folder,tags,size,chunk_num,chunk_size,salt,file_pwd,user_pwd = future.result()
         log(f"[+] Loaded archive: {archive}")
     except Exception as e:
         if isinstance(e,RuntimeError):
@@ -428,15 +453,17 @@ def on_loaded(future):
 
     def add_button():
         global preview_buttons
+        global current_button_count
+        global folders
         with lock:
-            row = len(preview_buttons) // columns
-            col = len(preview_buttons) % columns
+            row = current_button_count // columns
+            col = current_button_count % columns
             btn = tkinter.Button(frame,text=filename + parse(tags),image=tk_img,command=lambda a=archive,f=filename: open_file(a,f),compound=tkinter.TOP,state=state,wraplength=450)
 
             def show_menu(event):
                 global menu
                 if menu:
-                    menu.unpost()
+                    hide_menu()
                 file_info = _("File info\n")
                 file_info += _("Path: {path}\n").format(path=pathlib.Path(archive).parent)
                 file_info += _("Encrypted: {crypt}\n").format(crypt=pathlib.Path(archive).name)
@@ -462,7 +489,11 @@ def on_loaded(future):
                 
             btn.image = tk_img
             btn.bind("<Button-3>",show_menu)
-            btn.grid(row=row,column=col,padx=5,pady=5)
+            btn.folder = folder
+            folders |= {folder}
+            if folder == current_dir:
+                btn.grid(row=row,column=col,padx=5,pady=5)
+                current_button_count += 1
             preview_buttons += [btn]
             load_indicator.configure(text=_("Loading: {loaded}/{total}").format(loaded=len(preview_buttons),total=total),value=int(len(preview_buttons) / total * 100))
             if len(preview_buttons) == total:
@@ -528,8 +559,18 @@ def load_archives():
         future.add_done_callback(on_loaded)
 
 def on_drop(event):
-    file_path = event.data.strip().strip("{}")
-    create_file = subprocess.Popen(["python3","creator_gui.py","-f",file_path,"-p",user_password])
+    for i in root.tk.splitlist(event.data):
+        subprocess.Popen(["python3","creator_gui.py","-f",i,"-p",user_password,"-d",current_dir])
+    
+def switch_folder():
+    global current_dir
+    window = FolderWindow(root,folders)
+    result = window.result
+    if result:
+        current_dir = result
+        search_file(refresh=True)
+        folder_button.configure(text=_("Current folder: ") + result)
+    
     
 
 root = Tk()
@@ -547,12 +588,18 @@ search_frame = tkinter.ttk.LabelFrame(top_banner,text=_("Search"))
 search_frame.grid(row=0,column=0,padx=20)
 
 search_entry = tkinter.Entry(search_frame)
-search_entry.grid(row=0,column=0,padx=10,pady=10,ipadx=520)
+search_entry.grid(row=0,column=0,padx=(5,0),pady=10,ipadx=520)
 search_entry.pack_propagate(False)
 search_entry.bind("<KeyRelease>",search_file)
 
-search_reset = ttkbootstrap.Button(search_entry,text="×",command=reset_search,cursor="arrow",bootstyle=ttkbootstrap.constants.LINK)
-search_reset.pack(side=tkinter.RIGHT)
+search_modes = [_("Global"),_("Folder")]
+search_scope_var = tkinter.StringVar(value=search_modes[0])
+search_scope = tkinter.OptionMenu(search_frame,search_scope_var,*search_modes)
+search_scope.grid(row=0,column=2,pady=10)
+search_scope_tip = ttkbootstrap.widgets.tooltip.ToolTip(search_scope,text=_("When you choose \"Global\", it searches everywhere; if you choose \"Folder\", it only searches within the current folder."),delay=0)
+
+search_reset = ttkbootstrap.Button(search_frame,text="×",command=reset_search,cursor="arrow",bootstyle=ttkbootstrap.constants.LINK)
+search_reset.grid(row=0,column=1,padx=(0,5),pady=10)
 
 log_button = ttkbootstrap.Button(top_banner,text=_("Logs"),command=lambda: LogWindow(root,logs))
 log_button.grid(row=0,column=1,padx=10)
@@ -571,6 +618,9 @@ add_button.grid(row=0,column=4,padx=10)
 
 about = ttkbootstrap.Button(top_banner,text=_("About"),command=lambda: AboutWindow(root))
 about.grid(row=0,column=5,padx=10)
+
+folder_button = tkinter.Button(root,text=_("Current folder: ") + "/",command=switch_folder)
+folder_button.pack(fill=tkinter.X)
 
 preview_frame = tkinter.Frame()
 preview_frame.pack(fill=tkinter.BOTH,expand=True,ipady=350)
