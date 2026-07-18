@@ -12,5 +12,5 @@ temp.jpg
 to_do.txt
 FileEnclave/
 .envrc
-.direnva/
+.direnv/
 !.gitignore
