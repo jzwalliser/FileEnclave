@@ -287,7 +287,7 @@ class FolderWindow(Modal):
         self.folders = folders
         super().__init__(master,title=_("Folders"),customize_button=True)
     def body(self,master):
-        buttons = ttkbootstrap.LabelFrame(master,text="Folders")
+        buttons = ttkbootstrap.LabelFrame(master,text=_("Folders"))
         buttons.pack(ipadx=500,padx=10)
         for i in self.folders:
             folder = tkinter.Button(buttons,text=i,anchor=tkinter.W,command=lambda folder=i: self.apply(folder))

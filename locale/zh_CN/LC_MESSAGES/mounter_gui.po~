@@ -264,25 +264,3 @@ msgstr "添加文件"
 msgid "Loading: 0/0"
 msgstr "已加载：0/0"
 
-#: mounter_gui.py:288
-msgid "Folders"
-msgstr "文件夹"
-
-#: mounter_gui.py:362 mounter_gui.py:595
-msgid "Folder"
-msgstr "文件夹"
-
-#: mounter_gui.py:572 mounter_gui.py:622
-msgid "Current folder: "
-msgstr "当前文件夹："
-
-#: mounter_gui.py:595
-msgid "Global"
-msgstr "全局"
-
-#: mounter_gui.py:599
-msgid ""
-"When you choose \"Global\", it searches everywhere; if you choose "
-"\"Folder\", it only searches within the current folder."
-msgstr "当你选择“全局”时，将会在所有地方搜索；若选择“文件夹”则仅在当前文件夹内搜索。"
-
