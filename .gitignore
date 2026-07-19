@@ -3,6 +3,7 @@ mnt/
 config.7z
 __pycache__/
 *.pyc
+*.swp
 example.txt
 start_workspace.py
 experiment/
