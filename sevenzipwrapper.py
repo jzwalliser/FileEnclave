@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 import subprocess
 
 def read_file(archive,filename,password=None):

@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 import passwordutil
 import sevenzipwrapper
 import json

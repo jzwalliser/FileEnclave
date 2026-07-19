@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!./.direnv/python-3.14/bin/python3
 import tkinter
 import tkinter.messagebox
 import tkinter.filedialog

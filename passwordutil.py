@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 import argon2.low_level
 import secrets
 

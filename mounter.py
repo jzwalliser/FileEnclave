@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 import fuse
 import subprocess
 import os
