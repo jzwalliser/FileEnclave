@@ -559,8 +559,9 @@ def load_archives():
         future.add_done_callback(on_loaded)
 
 def on_drop(event):
+    print("DND")
     for i in root.tk.splitlist(event.data):
-        subprocess.Popen(["python3","creator_gui.py","-f",i,"-p",user_password,"-d",current_dir])
+        subprocess.Popen(["python3","creator_gui.py","-f",i,"-p",user_password,"-d",current_dir],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     
 def switch_folder():
     global current_dir
@@ -589,7 +590,6 @@ search_frame.grid(row=0,column=0,padx=20)
 
 search_entry = tkinter.Entry(search_frame)
 search_entry.grid(row=0,column=0,padx=(5,0),pady=10,ipadx=520)
-search_entry.pack_propagate(False)
 search_entry.bind("<KeyRelease>",search_file)
 
 search_modes = [_("Global"),_("Folder")]
@@ -633,8 +633,8 @@ canvas.configure(yscrollcommand=scrollbar.set)
 canvas.pack(side=tkinter.LEFT,fill=tkinter.BOTH,expand=True)
 scrollbar.pack(side="right",fill=tkinter.Y)
 
-frame.drop_target_register(tkinterdnd2.DND_FILES)
-frame.dnd_bind("<<Drop>>",on_drop)
+root.drop_target_register(tkinterdnd2.DND_FILES)
+root.dnd_bind("<<Drop>>",on_drop)
 
 load_indicator = ttkbootstrap.Floodgauge(root,text=_("Loading: 0/0"))
 load_indicator.pack(fill=tkinter.X)

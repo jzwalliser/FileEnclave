@@ -1,3 +1,4 @@
+#!./.direnv/python-3.14/bin/python3
 import cv2
 import PIL.Image
 import PIL.ImageOps
