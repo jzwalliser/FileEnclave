@@ -9,6 +9,7 @@ import signal
 import pathlib
 import time
 import sys
+print(sys.executable)
 import traceback
 import re
 import webbrowser
@@ -561,7 +562,7 @@ def load_archives():
 def on_drop(event):
     print("DND")
     for i in root.tk.splitlist(event.data):
-        subprocess.Popen(["python3","creator_gui.py","-f",i,"-p",user_password,"-d",current_dir],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        subprocess.Popen(["python3","creator_gui.py","-f",i,"-p",user_password,"-d",current_dir],stdout=sys.stdout,stderr=sys.stderr)
     
 def switch_folder():
     global current_dir

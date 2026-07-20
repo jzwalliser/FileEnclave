@@ -1,4 +1,5 @@
 #!./.direnv/python-3.14/bin/python3
+import sys
 import tkinter
 import tkinter.messagebox
 import tkinter.filedialog
@@ -16,7 +17,6 @@ import PIL.ImageTk
 import io
 import threading
 import shared
-import sys
 import argparse
 import gettext
 
