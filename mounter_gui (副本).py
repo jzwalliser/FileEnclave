@@ -572,12 +572,6 @@ def switch_folder():
         search_file(refresh=True)
         folder_button.configure(text=_("Current folder: ") + result)
 
-def scroll_up(event):
-    canvas.yview_scroll(-1,tkinter.UNITS)
-
-def scroll_down(event):
-    canvas.yview_scroll(1,tkinter.UNITS)
-
 root = Tk()
 root.title("FileEnclave")
 root.withdraw()
@@ -634,8 +628,6 @@ frame = tkinter.ttk.Frame(canvas)
 frame.bind("<Configure>",lambda e: canvas.configure(scrollregion=canvas.bbox(tkinter.ALL)))
 canvas.create_window((0,0),window=frame,anchor=tkinter.NW)
 canvas.configure(yscrollcommand=scrollbar.set)
-canvas.bind_all("<Button-4>",scroll_up)
-canvas.bind_all("<Button-5>",scroll_down)
 canvas.pack(side=tkinter.LEFT,fill=tkinter.BOTH,expand=True)
 scrollbar.pack(side="right",fill=tkinter.Y)
 
