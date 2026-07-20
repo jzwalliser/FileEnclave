@@ -11,7 +11,4 @@ update.sh
 ignored/
 temp.jpg
 to_do.txt
-FileEnclave/
-.envrc
-.direnv/
 !.gitignore

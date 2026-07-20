@@ -11,14 +11,11 @@ import cairo
 import pygments
 import pygments.lexers
 import pygments.formatters
-try:
-    import gi
-    gi.require_version("Pango","1.0")
-    gi.require_version("PangoCairo","1.0")
-    import gi.repository.Pango
-    import gi.repository.PangoCairo
-except:
-    pass
+import gi
+gi.require_version("Pango","1.0")
+gi.require_version("PangoCairo","1.0")
+import gi.repository.Pango
+import gi.repository.PangoCairo
 import mimetypes
 
 mimetypes.add_type("text/x-python",".pyw")

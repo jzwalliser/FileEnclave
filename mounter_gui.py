@@ -1,4 +1,4 @@
-#!./.direnv/python-3.14/bin/python3
+#!/usr/bin/python3
 import os
 import json
 import io
@@ -571,8 +571,6 @@ def switch_folder():
         current_dir = result
         search_file(refresh=True)
         folder_button.configure(text=_("Current folder: ") + result)
-    
-    
 
 root = Tk()
 root.title("FileEnclave")
