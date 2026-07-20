@@ -17,7 +17,7 @@ pip install pycairo pdf2image opencv-python fusepy argon2-cffi pillow chardet py
 GUI 的话，还要安装额外的依赖：
 ```bash
 sudo apt install python3-tk xclip
-pip install tkinterdnd2 ttkbootstrap pyperclip
+pip install tkinterdnd2 ttkbootstrap==1.20.4 pyperclip
 ```
 
 # 界面

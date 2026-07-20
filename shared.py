@@ -2,7 +2,7 @@ import re
 
 builds = {"Alpha":"This is an alpha release and you might encounter BUGS. IT IS NOT INTENDED FOR PRODUCTION USE.","Beta":"This is a beta release. If you encounter bugs, please open an issue on GitHub.","Stable":"This is a stable release. While we've worked hard to ensure reliability, please let us know if you run into any issues."}
 current_build = "Alpha"
-build_version = "v0.1.0"
+build_version = "v0.0.0"
 
 def format_bytes(size): #转换大小
     units = ["Bytes", "KB", "MB", "GB", "TB"]

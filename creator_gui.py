@@ -1,10 +1,10 @@
 #!./.direnv/python-3.14/bin/python3
 import sys
+import hashlib
 import tkinter
 import tkinter.messagebox
 import tkinter.filedialog
 import dataclasses
-import hashlib
 import json
 import subprocess
 import os

@@ -9,7 +9,6 @@ import signal
 import pathlib
 import time
 import sys
-print(sys.executable)
 import traceback
 import re
 import webbrowser
