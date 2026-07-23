@@ -62,12 +62,20 @@ GUI部分的界面是`tkinter`写的，用了`ttkbootstrap`进行美化。
 ### `mounter.py`
 用于读取加密压缩包，解密并挂载`fuse`文件系统，向上层提供数据。  
 参数：  
-- `archive`：需要解密的压缩包
-- `password`：解密压缩包用的密码
+- `archive`：需要读取的压缩包
+- `password`：读取压缩包用的密码
 - `mountpoint`：压缩包解密后挂载到系统的挂载点
 - `-f`/`--filename`：默认会从元数据中读取文件名，但可通过本开关指定文件名
 - `-c`/`--cachesize`：缓存大小，单位为字节，默认值是`10MB`
 - `-o`/`--openfile`：启用后，会在挂载完毕后立即打开目标文件
+
+### `extractor.py`
+用于直接将加密压缩包中的内容解压出来。  
+参数：  
+- `archive`：需要解压的压缩包
+- `password`：该压缩文件的解压密码
+- `directory`：解压后文件的输出目录
+- `-f`/`--filename`：默认会从元数据中读取文件名，但可通过本开关指定文件名
 
 
 ### `meta_editor.py`

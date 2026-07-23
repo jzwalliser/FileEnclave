@@ -64,9 +64,17 @@ Parameters:
 - `archive`: Path to the encrypted archive
 - `password`: Password for decryption
 - `mountpoint`: System mount point for the decrypted filesystem
-- `-f`/`--filename`: Override the filename read from metadata; specify a custom filename
+- `-f`/`--filename`: Overrides the filename from metadata if specified
 - `-c`/`--cachesize`: Cache size in bytes; defaults to `10MB`
 - `-o`/`--openfile`: Automatically open the target file after mounting completes
+
+### `extractor.py`
+Extracts contents directly from an encrypted archive.  
+Parameters:  
+- `archive`: Path to the encrypted archive
+- `password`: Password for decryption
+- `directory`: Output directory for extracted files
+- `-f` / `--filename`: Overrides the filename from metadata if specified
 
 ### `meta_editor.py`
 Modifies file metadata and passwords.  
