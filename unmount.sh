@@ -1,2 +1,0 @@
-umount -l mnt
-
