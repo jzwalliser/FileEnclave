@@ -125,12 +125,18 @@ GUI wrapper for `creator.py`, used to generate encrypted archives.
 Provides file previews and integrates repair, decryption, and other features for easier user operation.
 
 ## User Interface
+### Log in
 <img width="1470" height="482" alt="Log In" src="https://github.com/user-attachments/assets/479e0f11-cbcb-40ab-80ef-7d42beece98d" />
+### Main window
 <img width="2568" height="1400" alt="Mounter" src="https://github.com/user-attachments/assets/06da0ba4-6dfe-4251-9b9d-43d50aa0cf18" />
+### File info
 <img width="1808" height="1078" alt="File Info" src="https://github.com/user-attachments/assets/51e6d0db-6ea7-430a-8a65-233514db7d96" />
-<img width="1672" height="1246" alt="Creator" src="https://github.com/user-attachments/assets/f4fc30b6-6d29-4da8-8a0d-cab2e73d2f44" />
-<img width="2294" height="1408" alt="About" src="https://github.com/user-attachments/assets/925a6dff-1c23-4305-9cae-9df1c4aa21b7" />
+### Logs
 <img width="2208" height="984" alt="Logs" src="https://github.com/user-attachments/assets/9880b48a-a423-4bc3-98d0-e20fd698bc42" />
+### About
+<img width="2294" height="1408" alt="About" src="https://github.com/user-attachments/assets/925a6dff-1c23-4305-9cae-9df1c4aa21b7" />
+### Encryption tool
+<img width="1672" height="1246" alt="Creator" src="https://github.com/user-attachments/assets/f4fc30b6-6d29-4da8-8a0d-cab2e73d2f44" />
 
 # Acknowledgments
 Special thanks to:  

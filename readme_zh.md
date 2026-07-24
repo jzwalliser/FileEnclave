@@ -126,12 +126,18 @@ pip install tkinterdnd2 ttkbootstrap==1.20.4 pyperclip
 提供文件预览，整合修复、解密等功能，方便用户操作。
 
 ## 用户界面
+### 登录
 <img width="1470" height="482" alt="Log In" src="https://github.com/user-attachments/assets/479e0f11-cbcb-40ab-80ef-7d42beece98d" />
+### 主界面
 <img width="2568" height="1400" alt="Mounter" src="https://github.com/user-attachments/assets/06da0ba4-6dfe-4251-9b9d-43d50aa0cf18" />
+### 文件信息
 <img width="1808" height="1078" alt="File Info" src="https://github.com/user-attachments/assets/51e6d0db-6ea7-430a-8a65-233514db7d96" />
-<img width="1672" height="1246" alt="Creator" src="https://github.com/user-attachments/assets/f4fc30b6-6d29-4da8-8a0d-cab2e73d2f44" />
-<img width="2294" height="1408" alt="About" src="https://github.com/user-attachments/assets/925a6dff-1c23-4305-9cae-9df1c4aa21b7" />
+### 日志
 <img width="2208" height="984" alt="Logs" src="https://github.com/user-attachments/assets/9880b48a-a423-4bc3-98d0-e20fd698bc42" />
+### 关于
+<img width="2294" height="1408" alt="About" src="https://github.com/user-attachments/assets/925a6dff-1c23-4305-9cae-9df1c4aa21b7" />
+### 加密工具
+<img width="1672" height="1246" alt="Creator" src="https://github.com/user-attachments/assets/f4fc30b6-6d29-4da8-8a0d-cab2e73d2f44" />
 
 # 致谢
 在此，感谢：
