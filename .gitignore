@@ -11,4 +11,5 @@ update.sh
 ignored/
 temp.jpg
 to_do.txt
+Show/
 !.gitignore
