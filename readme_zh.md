@@ -3,7 +3,7 @@
 # 简介
 这是文件加密工具，可用于加密各式各样的文件。有不少Vibe-coding的成分；其中有30%的代码是元宝写的（在此非常感谢元宝），剩下70%代码是我写的，几乎所有的测试与 Bug 修复工作也由我负责。
 
-# 安装及使用
+# 安装
 在目标Linux机上安装python以及相关依赖，然后下载源代码即可运行。
 已在 Ubuntu 上完成测试，CLI 所需系统依赖如下：
 ```bash
@@ -19,9 +19,6 @@ GUI 的话，还要安装额外的依赖：
 sudo apt install python3-tk xclip
 pip install tkinterdnd2 ttkbootstrap==1.20.4 pyperclip
 ```
-
-# 界面
-GUI部分的界面是`tkinter`写的，用了`ttkbootstrap`进行美化。
 
 # 内部工作原理&设计
 ## 原理

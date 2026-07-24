@@ -3,7 +3,7 @@ English | [中文](readme_zh.md)
 # Introduction
 This is a file encryption tool capable of encrypting files of all types. It has a notable Vibe-coding flavor—30% of the code was written by Yuanbao (many thanks to Yuanbao for that), while the remaining 70% is my own work. Nearly all testing and bug fixes were also handled by me.
 
-# Installation & Usage
+# Installation
 Install Python and required dependencies on your target Linux machine, then download the source code to run the tool.  
 It has been tested on Ubuntu. CLI system dependencies are as follows:
 ```bash
@@ -19,9 +19,6 @@ For the GUI, additional dependencies are required:
 sudo apt install python3-tk xclip
 pip install tkinterdnd2 ttkbootstrap==1.20.4 pyperclip
 ```
-
-# Interface
-The GUI is built with `tkinter` and styled using `ttkbootstrap` for visual polish.
 
 # Internal Working Principles & Design
 ## Principles

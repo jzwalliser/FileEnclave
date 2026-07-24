@@ -202,7 +202,7 @@ class LoginWindow(Modal):
         cache_label = tkinter.Label(cache_frame,text=_("Cache: "))
         cache_label.pack(side=tkinter.LEFT)
         cache_tip = ttkbootstrap.widgets.tooltip.ToolTip(cache_label,text=_("The cache temporarily stores file chunks to improve loading performance. 16 MB is recommended; the maximum should not exceed 512 MB."),delay=0)
-        self.cache = tkinter.ttk.Combobox(cache_frame,values=["不启用","1 MB","2 MB","4 MB","8 MB","16 MB","32 MB","64 MB","128 MB","256 MB"])
+        self.cache = tkinter.ttk.Combobox(cache_frame,values=[_("Diasbled"),"1 MB","2 MB","4 MB","8 MB","16 MB","32 MB","64 MB","128 MB","256 MB"])
         self.cache.pack(side=tkinter.LEFT,fill=tkinter.X,expand=True)
         self.cache_show = tkinter.Label(cache_frame)
         self.cache_show.pack(side=tkinter.LEFT,padx=10)
@@ -472,14 +472,14 @@ def on_loaded(future):
                 file_info += _("Storage info\n")
                 file_info += _("Chunks: {chunk_num}\n").format(chunk_num=chunk_num)
                 file_info += _("Chunk size: {formatted} ({chunk_size} Bytes)\n").format(formatted=shared.format_bytes(chunk_size),chunk_size=chunk_size)
+                if tags:
+                    file_info += _("Other info\n")
+                    file_info += _("Tags: {tags}\n").format(tags=parse(tags))
                 if info_password:
                     file_info += _("Encryption info\n")
                     file_info += _("Salt: {salt}\n").format(salt=salt)
                     file_info += _("Primary Password: {user_pwd}\n").format(user_pwd=user_pwd)
                     file_info += _("Secondary Password: {file_pwd}\n").format(file_pwd=file_pwd)
-                if tags:
-                    file_info += _("Other info\n")
-                    file_info += _("Tags: {tags}\n").format(tags=parse(tags))
                 
                 menu = tkinter.Menu(btn,tearoff=0)
                 menu.add_command(label=_("Repair"),command=lambda: repair_file(archive))
@@ -617,7 +617,7 @@ repair_everything = ttkbootstrap.Button(top_banner,text=_("Check & Repair all fi
 repair_everything.grid(row=0,column=3,padx=10)
 repair_tip = ttkbootstrap.widgets.tooltip.ToolTip(repair_everything,text=_("Scans files within the specified path for corruption and attempts to repair them."),delay=0)
 
-add_button = ttkbootstrap.Button(top_banner,text=_("Add Files"),command=lambda: subprocess.Popen(["python3","creator_gui.py"]))
+add_button = ttkbootstrap.Button(top_banner,text=_("Add Files"),command=lambda: subprocess.Popen(["python3","creator_gui.py","-o",archive_dir]))
 add_button.grid(row=0,column=4,padx=10)
 
 about = ttkbootstrap.Button(top_banner,text=_("About"),command=lambda: AboutWindow(root))

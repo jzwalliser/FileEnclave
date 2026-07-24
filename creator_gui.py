@@ -111,7 +111,7 @@ def run_creator(): #创建加密压缩包
     tags_list = [t.strip() for t in tags_raw.split() if t.strip()]
     tags_json = ",".join(f'"{t}"' for t in tags_list)
 
-    cmd = ["python3","creator.py",file_path,f"{path}/{output_hash}.7z",user_password_var.get(),"-y","-m",f'{{"tags":[{tags_json}],"folder":"{virtual_directory_var.get()}"}}',"-c",str(calc_size(chunk_size_entry.current(),chunk_size_entry.get()))]
+    cmd = ["python3","creator.py",file_path,f"{os.path.join(output_entry.get(),output_hash)}.7z",user_password_var.get(),"-y","-m",f'{{"tags":[{tags_json}],"folder":"{virtual_directory_var.get()}"}}',"-c",str(calc_size(chunk_size_entry.current(),chunk_size_entry.get()))]
     print(cmd)
     
     if rec_percentage != 0:
@@ -224,7 +224,7 @@ left_frame = tkinter.Frame(main_pane,padx=10,pady=10)
 main_pane.add(left_frame)
 
 right_frame = tkinter.Frame(main_pane,padx=10,pady=10)
-main_pane.add(right_frame)
+main_pane.add(right_frame,minsize=820)
 
 drop_frame = tkinter.LabelFrame(left_frame,text=_("DND a file or choose one"),width=400,height=150,cursor="hand2")
 drop_frame.pack(ipady=30,fill=tkinter.X)
@@ -282,7 +282,6 @@ frame_output.pack(fill=tkinter.X,pady=5)
 output_label = tkinter.Label(frame_output,text=_("Output path: "))
 output_label.pack(side=tkinter.LEFT)
 output_entry = tkinter.Entry(frame_output,width=15)
-output_entry.insert(tkinter.INSERT,path)
 output_entry.pack(side=tkinter.LEFT,fill=tkinter.X,expand=True)
 
 virtual_directory = tkinter.Frame(left_frame)
@@ -293,7 +292,7 @@ virtual_directory_var = tkinter.StringVar()
 virtual_directory_entry = tkinter.Entry(virtual_directory,textvariable=virtual_directory_var,width=15)
 virtual_directory_entry.pack(side=tkinter.LEFT,fill=tkinter.X,expand=True)
 
-run = ttkbootstrap.Button(left_frame,text=_("Start encryption: "),command=run_creator)
+run = ttkbootstrap.Button(left_frame,text=_("Start encryption"),command=run_creator)
 run.pack(fill=tkinter.X,pady=15,ipady=20)
 
 right_container = tkinter.LabelFrame(right_frame,text=_("Tag settings"))
@@ -329,6 +328,7 @@ parser = argparse.ArgumentParser(description="Creator GUI")
 parser.add_argument("-f","--file",help="The file you wish to encrypt")
 parser.add_argument("-p","--password",help="Password for the file, loads from config.json if not given")
 parser.add_argument("-d","--directory",help="Virtual directory",default="/")
+parser.add_argument("-o","--output",help="Output directory",default=path)
 args = parser.parse_args()
 
 if args.file:
@@ -339,6 +339,8 @@ if args.file:
 
 if args.password:
     user_password_var.set(value=args.password)
+
 virtual_directory_var.set(value=args.directory)
+output_entry.insert(tkinter.INSERT,args.output)
 
 root.mainloop()
